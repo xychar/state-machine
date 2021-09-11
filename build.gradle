@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 wrapper.enabled(false)
@@ -12,10 +13,27 @@ repositories {
 }
 
 dependencies {
+    implementation "net.bytebuddy:byte-buddy:1.10.14"
+
+    implementation "org.springframework:spring-context:5.2.8.RELEASE"
+    implementation "org.springframework:spring-jdbc:5.2.8.RELEASE"
+    implementation "org.springframework:spring-tx:5.2.8.RELEASE"
+
+    implementation "org.mybatis.dynamic-sql:mybatis-dynamic-sql:1.2.0"
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.2'
+    implementation 'com.jayway.jsonpath:json-path:2.4.0'
+    implementation "org.slf4j:slf4j-simple:1.7.26"
+    implementation "org.xerial:sqlite-jdbc:3.28.0"
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
 
 test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass = "com.flowbuddy.spring.EntryPoint"
 }
