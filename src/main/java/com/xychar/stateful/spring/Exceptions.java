@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Role;
 import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
 
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-public class ExceptionConfig {
+public class Exceptions {
     @Bean
     public PersistenceExceptionTranslationPostProcessor exceptionTranslation() {
         return new PersistenceExceptionTranslationPostProcessor();

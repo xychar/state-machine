@@ -35,5 +35,5 @@ test {
 }
 
 application {
-    mainClass = "com.xychar.stateful.spring.StartPoint"
+    mainClass = "com.xychar.stateful.bootstrap.EntryPoint"
 }

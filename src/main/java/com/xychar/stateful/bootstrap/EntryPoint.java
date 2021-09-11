@@ -1,15 +1,14 @@
-package com.xychar.stateful.spring;
+package com.xychar.stateful.bootstrap;
 
-import com.xychar.stateful.engine.Step;
-import com.xychar.stateful.engine.Workflow;
 import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowMetadata;
 import com.xychar.stateful.engine.WorkflowSession;
+import com.xychar.stateful.example.WorkflowExample1;
+import com.xychar.stateful.spring.AppConfig;
+import com.xychar.stateful.spring.Exceptions;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.io.Serializable;
-
-public class StartPoint {
+public class EntryPoint {
 
     public static void execute() {
         WorkflowEngine engine = new WorkflowEngine();
@@ -22,7 +21,7 @@ public class StartPoint {
 
     public static void main(String[] args) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-        context.register(ExceptionConfig.class);
+        context.register(Exceptions.class);
         context.register(AppConfig.class);
 
         context.refresh();
