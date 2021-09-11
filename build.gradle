@@ -35,5 +35,5 @@ test {
 }
 
 application {
-    mainClass = "com.flowbuddy.spring.EntryPoint"
+    mainClass = "com.xychar.stateful.spring.StartPoint"
 }
