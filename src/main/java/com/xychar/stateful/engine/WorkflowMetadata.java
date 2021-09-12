@@ -1,7 +1,5 @@
 package com.xychar.stateful.engine;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class WorkflowMetadata<T> {
 
     public Class<?> workflowClass;
@@ -12,7 +10,8 @@ public class WorkflowMetadata<T> {
         try {
             @SuppressWarnings("unchecked")
             WorkflowSessionBase<T> session = (WorkflowSessionBase<T>) workflowProxyClass.getConstructor().newInstance();
-            session.handler = new WorkflowHandler(this, session);
+            session.handler = new StepHandler(this, session);
+            session.delegate = new StepInterceptor(this, session);
             return session;
         } catch (RuntimeException e) {
             throw e;

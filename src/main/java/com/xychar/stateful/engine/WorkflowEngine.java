@@ -4,8 +4,7 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.NamingStrategy;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
-import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 
@@ -42,7 +41,8 @@ public class WorkflowEngine {
                 .subclass(WorkflowSessionBase.class)
                 .implement(workflowClazz)
                 .method(methodFilter(workflowClazz))
-                .intercept(InvocationHandlerAdapter.toField("handler"))
+                // .intercept(InvocationHandlerAdapter.toField("handler"))
+                .intercept(MethodDelegation.to(StepInterceptor.class))
                 .make()
                 .load(workflowClazz.getClassLoader()) //, ClassLoadingStrategy.Default.INJECTION)
                 .getLoaded();

@@ -2,7 +2,9 @@ package com.xychar.stateful.engine;
 
 public class WorkflowSessionBase<T> implements WorkflowSession<T> {
 
-    public WorkflowHandler handler;
+    public StepHandler handler;
+
+    public Interceptor delegate;
 
     @Override
     public T getWorkflowInstance() {
