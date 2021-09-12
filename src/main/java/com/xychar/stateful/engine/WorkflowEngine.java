@@ -13,7 +13,7 @@ public class WorkflowEngine {
     private ByteBuddy newByteBuddy(Class<?> clazz) {
         return new ByteBuddy().with(
                 new NamingStrategy.SuffixingRandom(
-                        "stateful_",
+                        "Stateful",
                         new NamingStrategy.SuffixingRandom.BaseNameResolver.ForGivenType(
                                 new TypeDescription.ForLoadedType(clazz)
                         )

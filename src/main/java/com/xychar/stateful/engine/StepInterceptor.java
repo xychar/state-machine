@@ -3,7 +3,7 @@ package com.xychar.stateful.engine;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.DefaultCall;
-import net.bytebuddy.implementation.bind.annotation.DefaultMethod;
+import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.This;
 
@@ -57,7 +57,7 @@ public class StepInterceptor implements Interceptor {
     @RuntimeType
     public static Object delegate(@This WorkflowSessionBase<?> session,
                                   @DefaultCall Callable<?> superCall,
-                                  @DefaultMethod Method method,
+                                  @Origin Method method,
                                   @AllArguments Object[] args) throws Throwable {
         return session.delegate.invoke(superCall, method, args);
     }
