@@ -42,7 +42,8 @@ public class WorkflowEngine {
                 .implement(workflowClazz)
                 .method(methodFilter(workflowClazz))
                 // .intercept(InvocationHandlerAdapter.toField("handler"))
-                .intercept(MethodDelegation.to(StepInterceptor.class))
+                // .intercept(MethodDelegation.to(StepInterceptor.class))
+                .intercept(MethodDelegation.toField("delegate2"))
                 .make()
                 .load(workflowClazz.getClassLoader()) //, ClassLoadingStrategy.Default.INJECTION)
                 .getLoaded();

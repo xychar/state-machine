@@ -6,6 +6,8 @@ public class WorkflowSessionBase<T> implements WorkflowSession<T> {
 
     public Interceptor delegate;
 
+    public StepInterceptor2 delegate2;
+
     @Override
     public T getWorkflowInstance() {
         @SuppressWarnings("unchecked")
