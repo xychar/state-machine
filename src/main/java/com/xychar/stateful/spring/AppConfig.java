@@ -1,5 +1,6 @@
 package com.xychar.stateful.spring;
 
+import com.xychar.stateful.store.StepStateStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -14,7 +15,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 
 @EnableTransactionManagement
-@ComponentScan(basePackageClasses = {AppConfig.class})
+@ComponentScan(basePackageClasses = {
+        AppConfig.class, StepStateStore.class})
 @PropertySource("classpath:database.properties")
 public class AppConfig {
     @Autowired
