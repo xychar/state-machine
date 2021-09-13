@@ -14,7 +14,7 @@ public class WorkflowHandler implements Interceptor {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    static final Map<String, StepState> cache = new HashMap<>();
+    static final Map<String, StepCacheItem> cache = new HashMap<>();
 
     public WorkflowHandler(WorkflowMetadata<?> metadata, WorkflowSessionBase<?> session) {
         this.metadata = metadata;
@@ -27,26 +27,26 @@ public class WorkflowHandler implements Interceptor {
         String stepKey = args.length > 0 ? args[0].toString() : "";
         String cacheKey = method.getName() + ":" + stepKey;
 
-        StepState stepState = cache.get(cacheKey);
-        if (stepState != null) {
+        StepCacheItem stepCacheItem = cache.get(cacheKey);
+        if (stepCacheItem != null) {
             System.out.format("found method-call [%s] in cache", cacheKey);
             System.out.println();
 
-            return stepState.result;
+            return stepCacheItem.result;
         }
 
-        stepState = new StepState();
-        stepState.args = args;
-        stepState.result = invocation.call();
+        stepCacheItem = new StepCacheItem();
+        stepCacheItem.args = args;
+        stepCacheItem.result = invocation.call();
 
-        String argsData = mapper.writeValueAsString(stepState.args);
+        String argsData = mapper.writeValueAsString(stepCacheItem.args);
         System.out.println("args: " + argsData);
 
-        String retData = mapper.writeValueAsString(stepState.result);
+        String retData = mapper.writeValueAsString(stepCacheItem.result);
         System.out.println("ret: " + retData);
 
-        cache.put(cacheKey, stepState);
-        return stepState.result;
+        cache.put(cacheKey, stepCacheItem);
+        return stepCacheItem.result;
     }
 
     @Override

@@ -31,15 +31,17 @@ public class StepStateStore {
                 "  step_name varchar(200) NOT NULL,",
                 "  step_key varchar(200) NOT NULL,",
                 "  state varchar(20) NOT NULL,",
-                "  last_error varchar(2000) NULL,",
+                "  last_error text NULL,",
                 "  start_time varchar(50) NULL,",
                 "  end_time varchar(50) NULL,",
+                "  arguments text NULL,",
+                "  result text NULL,",
                 "  PRIMARY KEY(session_id, step_name, step_key)",
                 ")"
         ));
     }
 
-    public StepStateRecord loadState(String sessionId, String stepName, String stepKey) {
+    public StepStateRow loadState(String sessionId, String stepName, String stepKey) {
         NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
 
         Buildable<SelectModel> selectStatement = SelectDSL.select(StepStateTable.TABLE.allColumns())
@@ -51,11 +53,16 @@ public class StepStateStore {
         return extensions.selectOne(selectStatement, StepStateTable::mappingAllColumns).orElse(null);
     }
 
-    public void saveState(StepStateRecord row) {
+    public void saveState(StepStateRow row) {
         NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
 
         UpdateDSL.UpdateWhereBuilder updateStatement = UpdateDSL.update(StepStateTable.TABLE)
                 .set(StepStateTable.state).equalToWhenPresent(row.state)
+                .set(StepStateTable.lastError).equalToWhenPresent(row.lastError)
+                .set(StepStateTable.startTime).equalToWhenPresent(row.startTime)
+                .set(StepStateTable.endTime).equalToWhenPresent(row.endTime)
+                .set(StepStateTable.arguments).equalToWhenPresent(row.arguments)
+                .set(StepStateTable.result).equalToWhenPresent(row.result)
                 .where(StepStateTable.sessionId, SqlBuilder.isEqualTo(row.sessionId))
                 .and(StepStateTable.stepName, SqlBuilder.isEqualTo(row.stepName))
                 .and(StepStateTable.stepKey, SqlBuilder.isEqualTo(row.stepKey));
@@ -69,7 +76,9 @@ public class StepStateStore {
                     .set(StepStateTable.state).toValue(row.state)
                     .set(StepStateTable.lastError).toValueWhenPresent(row.lastError)
                     .set(StepStateTable.startTime).toValueWhenPresent(row.startTime)
-                    .set(StepStateTable.endTime).toValueWhenPresent(row.endTime);
+                    .set(StepStateTable.endTime).toValueWhenPresent(row.endTime)
+                    .set(StepStateTable.arguments).toValueWhenPresent(row.arguments)
+                    .set(StepStateTable.result).toValueWhenPresent(row.result);
 
             extensions.generalInsert(insertStatement);
         }

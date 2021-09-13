@@ -17,13 +17,15 @@ public class StepStateTable extends SqlTable {
     public static final SqlColumn<String> lastError = TABLE.column("last_error", JDBCType.VARCHAR);
     public static final SqlColumn<String> startTime = TABLE.column("start_time", JDBCType.VARCHAR);
     public static final SqlColumn<String> endTime = TABLE.column("end_time", JDBCType.VARCHAR);
+    public static final SqlColumn<String> arguments = TABLE.column("arguments", JDBCType.VARCHAR);
+    public static final SqlColumn<String> result = TABLE.column("result", JDBCType.VARCHAR);
 
     protected StepStateTable() {
         super("t_step_state");
     }
 
-    public static StepStateRecord mappingAllColumns(ResultSet rs, int index) throws SQLException {
-        StepStateRecord record = new StepStateRecord();
+    public static StepStateRow mappingAllColumns(ResultSet rs, int index) throws SQLException {
+        StepStateRow record = new StepStateRow();
 
         record.sessionId = rs.getString(sessionId.name());
         record.stepName = rs.getString(stepName.name());
@@ -32,6 +34,8 @@ public class StepStateTable extends SqlTable {
         record.lastError = rs.getString(lastError.name());
         record.startTime = rs.getString(startTime.name());
         record.endTime = rs.getString(endTime.name());
+        record.arguments = rs.getString(arguments.name());
+        record.result = rs.getString(result.name());
 
         return record;
     }

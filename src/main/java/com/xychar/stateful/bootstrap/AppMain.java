@@ -7,7 +7,7 @@ import com.xychar.stateful.engine.WorkflowSession;
 import com.xychar.stateful.example.WorkflowChild1;
 import com.xychar.stateful.spring.AppConfig;
 import com.xychar.stateful.spring.Exceptions;
-import com.xychar.stateful.store.StepStateRecord;
+import com.xychar.stateful.store.StepStateRow;
 import com.xychar.stateful.store.StepStateStore;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -36,9 +36,9 @@ public class AppMain {
         StepStateStore store = context.getBean(StepStateStore.class);
         store.createTableIfNotExists();
 
-        StepStateRecord row = store.loadState("s01", "hello", "sk1");
+        StepStateRow row = store.loadState("s01", "hello", "sk1");
         if (row == null) {
-            row = new StepStateRecord();
+            row = new StepStateRow();
             row.sessionId = "s01";
             row.stepName = "hello";
             row.stepKey = "sk1";

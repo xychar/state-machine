@@ -1,6 +1,6 @@
 package com.xychar.stateful.store;
 
-public class StepStateRecord {
+public class StepStateRow {
 
     public String sessionId;
     public String stepName;
@@ -9,4 +9,7 @@ public class StepStateRecord {
     public String lastError;
     public String startTime;
     public String endTime;
+
+    public String arguments;
+    public String result;
 }
