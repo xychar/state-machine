@@ -10,9 +10,7 @@ public class WorkflowMetadata<T> {
         try {
             @SuppressWarnings("unchecked")
             WorkflowSessionBase<T> session = (WorkflowSessionBase<T>) workflowProxyClass.getConstructor().newInstance();
-            session.handler = new StepHandler(this, session);
-            session.delegate = new StepInterceptor(this, session);
-            session.delegate2 = new StepInterceptor2(this, session);
+            session.handler = new WorkflowHandler(this, session);
             return session;
         } catch (RuntimeException e) {
             throw e;
