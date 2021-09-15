@@ -1,6 +1,7 @@
 package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Step;
+import com.xychar.stateful.engine.StepKey;
 import com.xychar.stateful.engine.Workflow;
 
 import java.security.SecureRandom;
@@ -13,14 +14,14 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
 
     @Step
     @Override
-    default void hello(String t1) {
+    default void hello(@StepKey String t1) {
         System.out.println("*** Method [hello] executed in WorkflowChild1");
         WorkflowBase1.super.hello(t1);
     }
 
     @Step
     @Override
-    default void welcome(String t1) {
+    default void welcome(@StepKey String t1) {
         WorkflowBase1.super.welcome(t1);
         WorkflowBase2.super.welcome(t1);
     }

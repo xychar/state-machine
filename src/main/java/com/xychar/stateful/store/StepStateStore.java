@@ -1,11 +1,15 @@
 package com.xychar.stateful.store;
 
+import com.xychar.stateful.engine.StepState;
+import com.xychar.stateful.engine.StepStateAccessor;
+import com.xychar.stateful.engine.StepStateData;
 import org.mybatis.dynamic.sql.SqlBuilder;
 import org.mybatis.dynamic.sql.insert.GeneralInsertDSL;
 import org.mybatis.dynamic.sql.insert.GeneralInsertModel;
 import org.mybatis.dynamic.sql.select.SelectDSL;
 import org.mybatis.dynamic.sql.select.SelectModel;
 import org.mybatis.dynamic.sql.update.UpdateDSL;
+import org.mybatis.dynamic.sql.update.UpdateModel;
 import org.mybatis.dynamic.sql.util.Buildable;
 import org.mybatis.dynamic.sql.util.spring.NamedParameterJdbcTemplateExtensions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +18,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class StepStateStore {
+public class StepStateStore implements StepStateAccessor {
     private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate template;
 
@@ -34,8 +38,8 @@ public class StepStateStore {
                 "  last_error text NULL,",
                 "  start_time varchar(50) NULL,",
                 "  end_time varchar(50) NULL,",
-                "  arguments text NULL,",
-                "  result text NULL,",
+                "  parameters text NULL,",
+                "  return_value text NULL,",
                 "  PRIMARY KEY(session_id, step_name, step_key)",
                 ")"
         ));
@@ -56,13 +60,13 @@ public class StepStateStore {
     public void saveState(StepStateRow row) {
         NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
 
-        UpdateDSL.UpdateWhereBuilder updateStatement = UpdateDSL.update(StepStateTable.TABLE)
+        UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(StepStateTable.TABLE)
                 .set(StepStateTable.state).equalToWhenPresent(row.state)
                 .set(StepStateTable.lastError).equalToWhenPresent(row.lastError)
                 .set(StepStateTable.startTime).equalToWhenPresent(row.startTime)
                 .set(StepStateTable.endTime).equalToWhenPresent(row.endTime)
-                .set(StepStateTable.arguments).equalToWhenPresent(row.arguments)
-                .set(StepStateTable.result).equalToWhenPresent(row.result)
+                .set(StepStateTable.parameters).equalToWhenPresent(row.parameters)
+                .set(StepStateTable.returnValue).equalToWhenPresent(row.returnValue)
                 .where(StepStateTable.sessionId, SqlBuilder.isEqualTo(row.sessionId))
                 .and(StepStateTable.stepName, SqlBuilder.isEqualTo(row.stepName))
                 .and(StepStateTable.stepKey, SqlBuilder.isEqualTo(row.stepKey));
@@ -77,10 +81,35 @@ public class StepStateStore {
                     .set(StepStateTable.lastError).toValueWhenPresent(row.lastError)
                     .set(StepStateTable.startTime).toValueWhenPresent(row.startTime)
                     .set(StepStateTable.endTime).toValueWhenPresent(row.endTime)
-                    .set(StepStateTable.arguments).toValueWhenPresent(row.arguments)
-                    .set(StepStateTable.result).toValueWhenPresent(row.result);
+                    .set(StepStateTable.parameters).toValueWhenPresent(row.parameters)
+                    .set(StepStateTable.returnValue).toValueWhenPresent(row.returnValue);
 
             extensions.generalInsert(insertStatement);
         }
+    }
+
+    @Override
+    public StepStateData load(String sessionId, String stepName, String stepKey) {
+        StepStateRow row = loadState(sessionId, stepName, stepKey);
+        if (row != null) {
+            StepStateData stateData = new StepStateData();
+            stateData.parameters = row.parameters;
+            stateData.returnValue = row.returnValue;
+            return stateData;
+        }
+
+        return null;
+    }
+
+    @Override
+    public void save(String sessionId, String stepName, String stepKey, StepStateData stateData) {
+        StepStateRow row = new StepStateRow();
+        row.sessionId = sessionId;
+        row.stepName = stepName;
+        row.stepKey = stepKey;
+        row.state = StepState.Done.name();
+        row.parameters = stateData.parameters;
+        row.returnValue = stateData.returnValue;
+        saveState(row);
     }
 }

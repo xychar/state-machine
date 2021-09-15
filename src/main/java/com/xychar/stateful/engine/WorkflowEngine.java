@@ -10,6 +10,8 @@ import net.bytebuddy.matcher.ElementMatchers;
 
 public class WorkflowEngine {
 
+    public StepStateAccessor stateAccessor;
+
     private ByteBuddy newByteBuddy(Class<?> clazz) {
         return new ByteBuddy().with(
                 new NamingStrategy.SuffixingRandom(
@@ -22,7 +24,7 @@ public class WorkflowEngine {
     }
 
     /**
-     * Only intercept methods
+     * Only intercept interface methods
      */
     private ElementMatcher<ByteCodeElement> methodFilter(Class<?> clazz) {
         return ElementMatchers.isDeclaredBy(
@@ -32,18 +34,16 @@ public class WorkflowEngine {
     }
 
     public <T> WorkflowMetadata<T> buildFrom(Class<T> workflowClazz) {
-        WorkflowMetadata<T> metadata = new WorkflowMetadata<T>();
+        WorkflowMetadata<T> metadata = new WorkflowMetadata<>();
+        metadata.stateAccessor = this.stateAccessor;
         metadata.workflowClass = workflowClazz;
 
-        ByteBuddy buddy = newByteBuddy(workflowClazz);
-
-        metadata.workflowProxyClass = buddy
+        metadata.workflowProxyClass = newByteBuddy(workflowClazz)
                 .subclass(WorkflowSessionBase.class)
                 .implement(workflowClazz)
                 .method(methodFilter(workflowClazz))
                 .intercept(MethodDelegation.toField("handler"))
-                .make()
-                .load(workflowClazz.getClassLoader()) //, ClassLoadingStrategy.Default.INJECTION)
+                .make().load(workflowClazz.getClassLoader())
                 .getLoaded();
 
         return metadata;

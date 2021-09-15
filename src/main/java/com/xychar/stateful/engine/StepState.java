@@ -36,7 +36,5 @@ public enum StepState {
     /**
      * The step is finished successfully.
      */
-    Done,
-
-    ;
+    Done;
 }

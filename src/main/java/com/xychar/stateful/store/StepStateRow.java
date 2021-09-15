@@ -10,6 +10,6 @@ public class StepStateRow {
     public String startTime;
     public String endTime;
 
-    public String arguments;
-    public String result;
+    public String parameters;
+    public String returnValue;
 }

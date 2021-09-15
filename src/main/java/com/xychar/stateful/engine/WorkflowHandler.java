@@ -10,43 +10,43 @@ import java.util.concurrent.Callable;
 public class WorkflowHandler implements Interceptor {
 
     private final WorkflowMetadata<?> metadata;
-    public final WorkflowSessionBase<?> session;
+    private final WorkflowSessionBase<?> session;
+    private final StepStateAccessor accessor;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    static final Map<String, StepCacheItem> cache = new HashMap<>();
+    static final Map<String, StepStateData> cache = new HashMap<>();
 
-    public WorkflowHandler(WorkflowMetadata<?> metadata, WorkflowSessionBase<?> session) {
+    public WorkflowHandler(WorkflowMetadata<?> metadata,
+                           WorkflowSessionBase<?> session,
+                           StepStateAccessor accessor) {
         this.metadata = metadata;
         this.session = session;
+        this.accessor = accessor;
     }
 
     public Object invoke(Object self, Callable<?> invocation, Method method, Object[] args) throws Throwable {
         System.out.println("*** invoking method: " + method.getName());
 
-        String stepKey = args.length > 0 ? args[0].toString() : "";
-        String cacheKey = method.getName() + ":" + stepKey;
-
-        StepCacheItem stepCacheItem = cache.get(cacheKey);
-        if (stepCacheItem != null) {
-            System.out.format("found method-call [%s] in cache", cacheKey);
+        String stepKey = args.length > 0 ? args[0].toString() : "_";
+        StepStateData stateData = accessor.load(session.sessionId, method.getName(), stepKey);
+        if (stateData != null) {
+            System.out.format("found method-call [%s:%s] in cache", method.getName(), stepKey);
             System.out.println();
 
-            return stepCacheItem.result;
+            return stateData.returnValue;
         }
 
-        stepCacheItem = new StepCacheItem();
-        stepCacheItem.args = args;
-        stepCacheItem.result = invocation.call();
+        Object result = invocation.call();
+        stateData = new StepStateData();
+        stateData.parameters = mapper.writeValueAsString(args);
+        System.out.println("args: " + stateData.parameters);
 
-        String argsData = mapper.writeValueAsString(stepCacheItem.args);
-        System.out.println("args: " + argsData);
+        stateData.returnValue = mapper.writeValueAsString(result);
+        System.out.println("ret: " + stateData.returnValue);
 
-        String retData = mapper.writeValueAsString(stepCacheItem.result);
-        System.out.println("ret: " + retData);
-
-        cache.put(cacheKey, stepCacheItem);
-        return stepCacheItem.result;
+        accessor.save(session.sessionId, method.getName(), stepKey, stateData);
+        return stateData.returnValue;
     }
 
     @Override
