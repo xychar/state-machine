@@ -1,6 +1,5 @@
 package com.xychar.stateful.bootstrap;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowMetadata;
 import com.xychar.stateful.engine.WorkflowSession;
@@ -11,10 +10,7 @@ import com.xychar.stateful.store.StepStateStore;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 
-import java.util.UUID;
-
-public class AppMain {
-    private static final ObjectMapper mapper = new ObjectMapper();
+public class Example1 {
 
     public static void executeExample(AbstractApplicationContext context) throws Exception {
         StepStateStore store = context.getBean(StepStateStore.class);
@@ -29,11 +25,11 @@ public class AppMain {
         WorkflowChild1 workflow = session.getWorkflowInstance();
 
         System.out.println("first-run: example1");
-        String data1 = workflow.example1();
+        Integer data1 = workflow.example1();
         System.out.println("data1: " + data1);
 
         System.out.println("Re-run: example1");
-        String data2 = workflow.example1();
+        Integer data2 = workflow.example1();
         System.out.println("data2: " + data2);
 
         System.out.println("Re-run: input");

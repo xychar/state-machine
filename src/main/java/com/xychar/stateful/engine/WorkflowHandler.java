@@ -34,7 +34,8 @@ public class WorkflowHandler implements Interceptor {
             System.out.format("found method-call [%s:%s] in cache", method.getName(), stepKey);
             System.out.println();
 
-            return stateData.returnValue;
+            Object result = mapper.readValue(stateData.returnValue, method.getReturnType());
+            return result;
         }
 
         Object result = invocation.call();
@@ -46,7 +47,7 @@ public class WorkflowHandler implements Interceptor {
         System.out.println("ret: " + stateData.returnValue);
 
         accessor.save(session.sessionId, method.getName(), stepKey, stateData);
-        return stateData.returnValue;
+        return result;
     }
 
     @Override
