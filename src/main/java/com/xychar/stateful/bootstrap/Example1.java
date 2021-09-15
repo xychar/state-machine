@@ -35,6 +35,8 @@ public class Example1 {
         System.out.println("Re-run: input");
         String input1 = workflow.input();
         System.out.println("input1: " + input1);
+
+        System.out.println("chr: " + ('d' - 'a'));
     }
 
     public static void main(String[] args) {
