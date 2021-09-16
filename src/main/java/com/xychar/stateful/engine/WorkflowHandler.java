@@ -25,6 +25,11 @@ public class WorkflowHandler implements Interceptor {
         this.accessor = accessor;
     }
 
+    @Override
+    public void sleep(long milliseconds) {
+        System.out.println("*** sleep: " + milliseconds);
+    }
+
     public Object invoke(Object self, Callable<?> invocation, Method method,
                          String stepKeyArgs, Object[] args) throws Throwable {
         System.out.println("*** invoking method: " + method.getName());
@@ -56,5 +61,13 @@ public class WorkflowHandler implements Interceptor {
                             Method method, String stepKeyArgs,
                             Object... args) throws Throwable {
         return invoke(session, invocation, method, stepKeyArgs, args);
+    }
+
+    @Override
+    public Object intercept(WorkflowSessionBase<?> session,
+                            Method method, String stepKeyArgs,
+                            Object... args) throws Throwable {
+        System.out.println("*** invoking non-default method: " + method.getName());
+        return null;
     }
 }

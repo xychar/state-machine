@@ -54,6 +54,10 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
         System.out.println("*** Method [hi] executed in WorkflowChild1");
     }
 
+    void sleep(long milliseconds);
+
+    void waitFor(long milliseconds);
+
     @Step
     default Integer example1() {
         System.out.println("*** Method [example1] executed in WorkflowChild1");
@@ -67,6 +71,9 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
         }
 
         hello("ab");
+
+        sleep(3000L);
+        waitFor(8000L);
 
         hi("p1", 'b', "c", 'd');
         return Integer.parseInt(data.toLowerCase(), 16);

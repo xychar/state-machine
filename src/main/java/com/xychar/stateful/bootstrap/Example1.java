@@ -10,6 +10,8 @@ import com.xychar.stateful.store.StepStateStore;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 
+import java.util.UUID;
+
 public class Example1 {
 
     public static void executeExample(AbstractApplicationContext context) throws Exception {
@@ -21,7 +23,8 @@ public class Example1 {
 
         WorkflowMetadata<WorkflowChild1> metadata = engine.buildFrom(WorkflowChild1.class);
         WorkflowSession<WorkflowChild1> session = metadata.newSession();
-        session.setSessionId("s-001"); // UUID.randomUUID().toString());
+        // session.setSessionId("s-001");
+        session.setSessionId(UUID.randomUUID().toString());
         WorkflowChild1 workflow = session.getWorkflowInstance();
 
         System.out.println("first-run: example1");

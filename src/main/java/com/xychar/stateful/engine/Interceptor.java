@@ -1,6 +1,7 @@
 package com.xychar.stateful.engine;
 
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.BindingPriority;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -11,8 +12,19 @@ import java.util.concurrent.Callable;
 
 public interface Interceptor {
 
+    @BindingPriority(200)
+    void sleep(long milliseconds);
+
     @RuntimeType
-    public Object intercept(@This WorkflowSessionBase<?> session, @SuperCall Callable<?> invocation,
-                            @Origin Method method, @StepKeyArgs String stepKeyArgs,
-                            @AllArguments Object... args) throws Throwable;
+    @BindingPriority(300)
+    Object intercept(@This WorkflowSessionBase<?> session, @SuperCall Callable<?> invocation,
+                     @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                     @AllArguments Object... args) throws Throwable;
+
+    @RuntimeType
+    @BindingPriority(500)
+    Object intercept(@This WorkflowSessionBase<?> session,
+                     @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                     @AllArguments Object... args) throws Throwable;
+
 }
