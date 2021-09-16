@@ -50,6 +50,11 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
     }
 
     @Step
+    default void hi(@StepKey String a, int b, String c, @StepKey int d) {
+        System.out.println("*** Method [hi] executed in WorkflowChild1");
+    }
+
+    @Step
     default Integer example1() {
         System.out.println("*** Method [example1] executed in WorkflowChild1");
         init();
@@ -62,6 +67,8 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
         }
 
         hello("ab");
+
+        hi("p1", 'b', "c", 'd');
         return Integer.parseInt(data.toLowerCase(), 16);
     }
 }

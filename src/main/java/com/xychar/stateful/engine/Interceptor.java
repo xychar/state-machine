@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 public interface Interceptor {
 
     @RuntimeType
-    public Object intercept(@This WorkflowSessionBase<?> session, @SuperCall Callable<?> superCall,
-                            @Origin Method method, @AllArguments Object... args) throws Throwable;
+    public Object intercept(@This WorkflowSessionBase<?> session, @SuperCall Callable<?> invocation,
+                            @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                            @AllArguments Object... args) throws Throwable;
 }

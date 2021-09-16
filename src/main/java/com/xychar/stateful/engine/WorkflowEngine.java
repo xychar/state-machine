@@ -42,7 +42,9 @@ public class WorkflowEngine {
                 .subclass(WorkflowSessionBase.class)
                 .implement(workflowClazz)
                 .method(methodFilter(workflowClazz))
-                .intercept(MethodDelegation.toField("handler"))
+                .intercept(MethodDelegation.withDefaultConfiguration()
+                        .withBinders(StepKeyArgs.Binder.INSTANCE)
+                        .toField("handler"))
                 .make().load(workflowClazz.getClassLoader())
                 .getLoaded();
 

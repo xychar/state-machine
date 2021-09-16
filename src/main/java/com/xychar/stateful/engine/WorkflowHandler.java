@@ -25,7 +25,8 @@ public class WorkflowHandler implements Interceptor {
         this.accessor = accessor;
     }
 
-    public Object invoke(Object self, Callable<?> invocation, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object self, Callable<?> invocation, Method method,
+                         String stepKeyArgs, Object[] args) throws Throwable {
         System.out.println("*** invoking method: " + method.getName());
 
         String stepKey = args.length > 0 ? args[0].toString() : "_";
@@ -51,8 +52,9 @@ public class WorkflowHandler implements Interceptor {
     }
 
     @Override
-    public Object intercept(WorkflowSessionBase<?> session, Callable<?> superCall,
-                            Method method, Object... args) throws Throwable {
-        return invoke(session, superCall, method, args);
+    public Object intercept(WorkflowSessionBase<?> session, Callable<?> invocation,
+                            Method method, String stepKeyArgs,
+                            Object... args) throws Throwable {
+        return invoke(session, invocation, method, stepKeyArgs, args);
     }
 }
