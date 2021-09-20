@@ -4,7 +4,7 @@ public class WorkflowSessionBase<T> implements WorkflowSession<T> {
 
     public String sessionId;
 
-    public Interceptor handler;
+    public WorkflowHandler handler;
 
     @Override
     public String getSessionId() {

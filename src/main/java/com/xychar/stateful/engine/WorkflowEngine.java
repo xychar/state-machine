@@ -4,6 +4,7 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.NamingStrategy;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.ArgumentTypeResolver;
 import net.bytebuddy.implementation.bind.DeclaringTypeResolver;
@@ -40,30 +41,33 @@ public class WorkflowEngine {
     }
 
     public <T> WorkflowMetadata<T> buildFrom(Class<T> workflowClazz) {
+        ClassLoader classLoader = workflowClazz.getClassLoader();
+
         WorkflowMetadata<T> metadata = new WorkflowMetadata<>();
         metadata.stateAccessor = this.stateAccessor;
         metadata.workflowClass = workflowClazz;
 
-        metadata.workflowProxyClass = newByteBuddy(workflowClazz)
+        DynamicType.Unloaded<WorkflowSessionBase> dynamicType = newByteBuddy(workflowClazz)
                 .subclass(WorkflowSessionBase.class)
                 .implement(workflowClazz)
                 .method(methodFilter(workflowClazz))
                 .intercept(MethodDelegation.withEmptyConfiguration()
                         .withBinders(TargetMethodAnnotationDrivenBinder.ParameterBinder.DEFAULTS)
                         .withBinders(StepKeyArgs.Binder.INSTANCE)
-                        .withResolvers( // DeclaringTypeResolver.INSTANCE,
+                        .withResolvers(
                                 MethodNameEqualityResolver.INSTANCE,
                                 ParameterLengthResolver.INSTANCE,
                                 ArgumentTypeResolver.INSTANCE,
+                                DeclaringTypeResolver.INSTANCE,
                                 BindingPriority.Resolver.INSTANCE)
                         .toField("handler"))
 
 //                .intercept(MethodDelegation.withDefaultConfiguration()
 //                        .withBinders(StepKeyArgs.Binder.INSTANCE)
 //                        .toField("handler"))
-                .make().load(workflowClazz.getClassLoader())
-                .getLoaded();
+                .make();
 
+        metadata.workflowProxyClass = dynamicType.load(classLoader).getLoaded();
         return metadata;
     }
 

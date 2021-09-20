@@ -38,6 +38,9 @@ public class Example1 {
         System.out.println("Re-run: input");
         String input1 = workflow.input();
         System.out.println("input1: " + input1);
+
+        String sessionId = workflow.getSessionId();
+        System.out.println("SessionId: " + sessionId);
     }
 
     public static void main(String[] args) {

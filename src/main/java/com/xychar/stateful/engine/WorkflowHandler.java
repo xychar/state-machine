@@ -1,73 +1,31 @@
 package com.xychar.stateful.engine;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.BindingPriority;
+import net.bytebuddy.implementation.bind.annotation.Origin;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.implementation.bind.annotation.SuperCall;
+import net.bytebuddy.implementation.bind.annotation.This;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class WorkflowHandler implements Interceptor {
+public interface WorkflowHandler extends WorkflowOperations {
 
-    private final WorkflowMetadata<?> metadata;
-    private final WorkflowSessionBase<?> session;
-    private final StepStateAccessor accessor;
+    @RuntimeType
+    @BindingPriority(300)
+    Object intercept(@This WorkflowSessionBase<?> session, @SuperCall Callable<?> invocation,
+                     @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                     @AllArguments Object... args) throws Throwable;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    @RuntimeType
+    @BindingPriority(500)
+    Object intercept(@This WorkflowSessionBase<?> session,
+                     @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                     @AllArguments Object... args) throws Throwable;
 
-    static final Map<String, StepStateData> cache = new HashMap<>();
+    @BindingPriority(100)
+    void sleep(long milliseconds);
 
-    public WorkflowHandler(WorkflowMetadata<?> metadata,
-                           WorkflowSessionBase<?> session,
-                           StepStateAccessor accessor) {
-        this.metadata = metadata;
-        this.session = session;
-        this.accessor = accessor;
-    }
-
-    @Override
-    public void sleep(long milliseconds) {
-        System.out.println("*** sleep: " + milliseconds);
-    }
-
-    public Object invoke(Object self, Callable<?> invocation, Method method,
-                         String stepKeyArgs, Object[] args) throws Throwable {
-        System.out.println("*** invoking method: " + method.getName());
-
-        String stepKey = args.length > 0 ? args[0].toString() : "_";
-        StepStateData stateData = accessor.load(session.sessionId, method.getName(), stepKey);
-        if (stateData != null) {
-            System.out.format("found method-call [%s:%s] in cache", method.getName(), stepKey);
-            System.out.println();
-
-            Object result = mapper.readValue(stateData.returnValue, method.getReturnType());
-            return result;
-        }
-
-        Object result = invocation.call();
-        stateData = new StepStateData();
-        stateData.parameters = mapper.writeValueAsString(args);
-        System.out.println("args: " + stateData.parameters);
-
-        stateData.returnValue = mapper.writeValueAsString(result);
-        System.out.println("ret: " + stateData.returnValue);
-
-        accessor.save(session.sessionId, method.getName(), stepKey, stateData);
-        return result;
-    }
-
-    @Override
-    public Object intercept(WorkflowSessionBase<?> session, Callable<?> invocation,
-                            Method method, String stepKeyArgs,
-                            Object... args) throws Throwable {
-        return invoke(session, invocation, method, stepKeyArgs, args);
-    }
-
-    @Override
-    public Object intercept(WorkflowSessionBase<?> session,
-                            Method method, String stepKeyArgs,
-                            Object... args) throws Throwable {
-        System.out.println("*** invoking non-default method: " + method.getName());
-        return null;
-    }
+    void waitFor(long milliseconds);
 }
