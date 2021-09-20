@@ -61,10 +61,6 @@ public class WorkflowEngine {
                                 DeclaringTypeResolver.INSTANCE,
                                 BindingPriority.Resolver.INSTANCE)
                         .toField("handler"))
-
-//                .intercept(MethodDelegation.withDefaultConfiguration()
-//                        .withBinders(StepKeyArgs.Binder.INSTANCE)
-//                        .toField("handler"))
                 .make();
 
         metadata.workflowProxyClass = dynamicType.load(classLoader).getLoaded();

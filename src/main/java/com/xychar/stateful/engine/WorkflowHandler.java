@@ -26,6 +26,4 @@ public interface WorkflowHandler extends WorkflowOperations {
 
     @BindingPriority(100)
     void sleep(long milliseconds);
-
-    void waitFor(long milliseconds);
 }
