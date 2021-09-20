@@ -8,7 +8,7 @@ public class WorkflowMetadata<T> {
 
     public StepStateAccessor stateAccessor;
 
-    public WorkflowSession<T> newSession() {
+    public WorkflowSessionBase<T> newSession() {
         try {
             @SuppressWarnings("unchecked")
             WorkflowSessionBase<T> session = (WorkflowSessionBase<T>) workflowProxyClass.getConstructor().newInstance();

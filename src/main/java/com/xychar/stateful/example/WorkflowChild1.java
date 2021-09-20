@@ -53,6 +53,7 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2, WorkflowOp
     @Step
     default void hi(@StepKey String a, int b, String c, @StepKey int d) {
         System.out.println("*** Method [hi] executed in WorkflowChild1");
+        throw new IllegalStateException("Step execution failed");
     }
 
     void sleep(long milliseconds);

@@ -1,8 +1,10 @@
 package com.xychar.stateful.engine;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -35,20 +37,44 @@ public class WorkflowHandlerImpl implements WorkflowHandler {
             System.out.format("found method-call [%s:%s] in cache", method.getName(), stepKey);
             System.out.println();
 
-            Object result = mapper.readValue(stateData.returnValue, method.getReturnType());
-            return result;
+            Object result = null;
+            if (StringUtils.isNoneBlank(stateData.returnValue)) {
+                result = mapper.readValue(stateData.returnValue, method.getReturnType());
+            }
+
+            if (stateData.state == StepState.Done) {
+                return result;
+            }
         }
 
-        Object result = invocation.call();
-        stateData = new StepStateData();
-        stateData.parameters = mapper.writeValueAsString(args);
-        System.out.println("args: " + stateData.parameters);
+        try {
+            Object result = invocation.call();
 
-        stateData.returnValue = mapper.writeValueAsString(result);
-        System.out.println("ret: " + stateData.returnValue);
+            stateData = new StepStateData();
+            stateData.parameters = mapper.writeValueAsString(args);
+            System.out.println("args: " + stateData.parameters);
 
-        accessor.save(session.sessionId, method.getName(), stepKey, stateData);
-        return result;
+            stateData.returnValue = mapper.writeValueAsString(result);
+            System.out.println("ret: " + stateData.returnValue);
+
+            stateData.exception = "";
+            stateData.state = StepState.Done;
+            accessor.save(session.sessionId, method.getName(), stepKey, stateData);
+            return result;
+        } catch (Exception e) {
+            stateData = new StepStateData();
+            stateData.parameters = mapper.writeValueAsString(args);
+            stateData.exception = mapper.writeValueAsString(e);
+            stateData.returnValue = "";
+            stateData.state = StepState.Retrying;
+            stateData.nextRun = Instant.now().plusSeconds(30L);
+            accessor.save(session.sessionId, method.getName(), stepKey, stateData);
+
+            SchedulingException scheduling = new SchedulingException();
+            scheduling.currentMethod = method;
+            scheduling.stepStateData = stateData;
+            throw scheduling;
+        }
     }
 
     @Override

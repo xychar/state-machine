@@ -95,6 +95,8 @@ public class StepStateStore implements StepStateAccessor {
             StepStateData stateData = new StepStateData();
             stateData.parameters = row.parameters;
             stateData.returnValue = row.returnValue;
+            stateData.exception = row.lastError;
+            stateData.state = StepState.valueOf(row.state);
             return stateData;
         }
 
@@ -107,7 +109,7 @@ public class StepStateStore implements StepStateAccessor {
         row.sessionId = sessionId;
         row.stepName = stepName;
         row.stepKey = stepKey;
-        row.state = StepState.Done.name();
+        row.state = stateData.state.name();
         row.parameters = stateData.parameters;
         row.returnValue = stateData.returnValue;
         saveState(row);
