@@ -17,6 +17,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
+
 @Component
 public class StepStateStore implements StepStateAccessor {
     private final JdbcTemplate jdbcTemplate;
@@ -113,5 +115,15 @@ public class StepStateStore implements StepStateAccessor {
         row.parameters = stateData.parameters;
         row.returnValue = stateData.returnValue;
         saveState(row);
+    }
+
+    @Override
+    public StepStateData load(String sessionId, Method stepMethod, String stepKey) {
+        return null;
+    }
+
+    @Override
+    public void save(String sessionId, Method stepMethod, String stepKey, StepStateData item) {
+
     }
 }

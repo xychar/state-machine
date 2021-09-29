@@ -63,7 +63,7 @@ public class Example1 {
 
         Method method = workflowClazz.getMethod(methodName);
 
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 200; i++) {
             try {
                 Object result = method.invoke(workflow);
                 System.out.println(methodName + ": " + result);
