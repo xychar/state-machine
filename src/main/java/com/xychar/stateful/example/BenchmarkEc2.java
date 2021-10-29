@@ -32,8 +32,8 @@ public interface BenchmarkEc2 {
 
         String ec2Id = launchEc2();
         checkEc2(ec2Id);
-        ssmPing(ec2Id);
-        installHDB(ec2Id);
+        pingSsm(ec2Id);
+        installHdb(ec2Id);
 
         return ec2Id;
     }
