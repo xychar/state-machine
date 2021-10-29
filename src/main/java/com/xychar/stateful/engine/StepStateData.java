@@ -7,7 +7,10 @@ public class StepStateData {
     public Object returnValue;
     public Object[] parameters;
     public Throwable exception;
-    public int retriedTimes;
-    public int maxRetryTimes;
+    public int executionTimes;
+    public int maxExecutionTimes;
+    public Instant startTime;
+    public Instant endTime;
+    public Instant currentRun;
     public Instant nextRun;
 }

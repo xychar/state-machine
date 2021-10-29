@@ -14,12 +14,12 @@ public class StepStateTable extends SqlTable {
     public static final SqlColumn<String> stepName = TABLE.column("step_name", JDBCType.VARCHAR);
     public static final SqlColumn<String> stepKey = TABLE.column("step_key", JDBCType.VARCHAR);
     public static final SqlColumn<String> state = TABLE.column("state", JDBCType.VARCHAR);
-    public static final SqlColumn<String> exception = TABLE.column("exception", JDBCType.VARCHAR);
-    public static final SqlColumn<String> errorType = TABLE.column("error_type", JDBCType.VARCHAR);
     public static final SqlColumn<String> startTime = TABLE.column("start_time", JDBCType.VARCHAR);
     public static final SqlColumn<String> endTime = TABLE.column("end_time", JDBCType.VARCHAR);
-    public static final SqlColumn<String> parameters = TABLE.column("parameters", JDBCType.VARCHAR);
     public static final SqlColumn<String> returnValue = TABLE.column("return_value", JDBCType.VARCHAR);
+    public static final SqlColumn<String> parameters = TABLE.column("parameters", JDBCType.VARCHAR);
+    public static final SqlColumn<String> errorType = TABLE.column("error_type", JDBCType.VARCHAR);
+    public static final SqlColumn<String> exception = TABLE.column("exception", JDBCType.VARCHAR);
 
     protected StepStateTable() {
         super("t_step_state");

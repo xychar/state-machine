@@ -71,7 +71,14 @@ public class Example1 {
                 break;
             } catch (InvocationTargetException e) {
                 if (e.getTargetException() instanceof SchedulingException) {
-                    Thread.sleep(5000L);
+                    SchedulingException se = (SchedulingException) e.getTargetException();
+
+                    if (se.waitingTime >= 200) {
+                        Thread.sleep(se.waitingTime);
+                    } else {
+                        Thread.sleep(5000L);
+                    }
+
                     continue;
                 }
 

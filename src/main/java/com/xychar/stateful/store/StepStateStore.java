@@ -52,12 +52,12 @@ public class StepStateStore implements StepStateAccessor {
                 "  step_name varchar(200) NOT NULL,",
                 "  step_key varchar(200) NOT NULL,",
                 "  state varchar(20) NOT NULL,",
-                "  exception text NULL,",
-                "  error_type varchar(200) NULL,",
                 "  start_time varchar(50) NULL,",
                 "  end_time varchar(50) NULL,",
-                "  parameters text NULL,",
                 "  return_value text NULL,",
+                "  parameters text NULL,",
+                "  error_type varchar(200) NULL,",
+                "  exception text NULL,",
                 "  PRIMARY KEY(session_id, step_name, step_key)",
                 ")"
         ));
@@ -150,17 +150,17 @@ public class StepStateStore implements StepStateAccessor {
         row.sessionId = sessionId;
 
         try {
-            row.parameters = mapper.writeValueAsString(stateData.parameters);
-            System.out.println("args: " + row.parameters);
-        } catch (JsonProcessingException e) {
-            throw new StepStateException("Failed to encode step parameters", e);
-        }
-
-        try {
             row.returnValue = mapper.writeValueAsString(stateData.returnValue);
             System.out.println("ret: " + row.returnValue);
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step result", e);
+        }
+
+        try {
+            row.parameters = mapper.writeValueAsString(stateData.parameters);
+            System.out.println("args: " + row.parameters);
+        } catch (JsonProcessingException e) {
+            throw new StepStateException("Failed to encode step parameters", e);
         }
 
         try {

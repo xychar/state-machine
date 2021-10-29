@@ -2,7 +2,6 @@ package com.xychar.stateful.engine;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -28,14 +27,28 @@ public class WorkflowHandler implements StepHandler {
         this.accessor = accessor;
     }
 
-    private Object[] getStepKeys(String stepKeyArgs, Object[] args) {
-        Object[] stepKeys = new Object[stepKeyArgs.length()];
-        for (int i = 0; i < stepKeyArgs.length(); i++) {
-            int argIndex = stepKeyArgs.charAt(i) - 'a';
-            stepKeys[i] = args[argIndex];
+    private int charToArgIndex(char value) {
+        if (value >= '0' && value <= '9') {
+            return (int) (value - '0');
+        } else if (value >= 'a' && value <= 'z') {
+            return (int) (value - 'a') + 10;
+        } else {
+            throw new IndexOutOfBoundsException("Invalid argument index");
         }
+    }
 
-        return stepKeys;
+    private Object[] getStepKeys(String stepKeyArgs, Object[] args) {
+        if (stepKeyArgs != null && !stepKeyArgs.isEmpty()) {
+            Object[] stepKeys = new Object[stepKeyArgs.length()];
+            for (int i = 0; i < stepKeyArgs.length(); i++) {
+                int argIndex = charToArgIndex(stepKeyArgs.charAt(i));
+                stepKeys[i] = args[argIndex];
+            }
+
+            return stepKeys;
+        } else {
+            return new Object[0];
+        }
     }
 
     private String encodeStepKey(Object[] stepKeys) throws Throwable {
@@ -59,12 +72,21 @@ public class WorkflowHandler implements StepHandler {
             } else if (StepState.Failed.equals(stateData.state)) {
                 throw new StepFailedException("Step already failed", stateData.exception);
             }
+
+            stateData.currentRun = Instant.now();
+        } else {
+            stateData = new StepStateData();
+            stateData.startTime = Instant.now();
+            stateData.currentRun = Instant.now();
         }
+
+        StepStateHolder.setStepStateData(stateData);
 
         try {
             Object result = invocation.call();
+            stateData.executionTimes++;
+            stateData.endTime = Instant.now();
 
-            stateData = new StepStateData();
             stateData.exception = null;
             stateData.returnValue = result;
             stateData.parameters = args;
@@ -73,7 +95,7 @@ public class WorkflowHandler implements StepHandler {
             accessor.save(instance.executionId, method, stepKey, stateData);
             return result;
         } catch (Exception e) {
-            stateData = new StepStateData();
+            stateData.executionTimes++;
             stateData.exception = e;
             stateData.returnValue = null;
             stateData.parameters = args;
@@ -84,7 +106,10 @@ public class WorkflowHandler implements StepHandler {
             SchedulingException scheduling = new SchedulingException();
             scheduling.stepStateData = stateData;
             scheduling.currentMethod = method;
+            scheduling.waitingTime = 2500;
             throw scheduling;
+        } finally {
+            StepStateHolder.setStepStateData(null);
         }
     }
 
