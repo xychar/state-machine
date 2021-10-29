@@ -10,17 +10,17 @@ import net.bytebuddy.implementation.bind.annotation.This;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 
-public interface StepHandler extends WorkflowOperations {
+public interface StepHandler extends StepOperations {
 
     @RuntimeType
     @BindingPriority(300)
-    Object intercept(@This WorkflowSessionBase<?> session, @SuperCall Callable<?> invocation,
+    Object intercept(@This WorkflowInstance<?> session, @SuperCall Callable<?> invocation,
                      @Origin Method method, @StepKeyArgs String stepKeyArgs,
                      @AllArguments Object... args) throws Throwable;
 
     @RuntimeType
     @BindingPriority(500)
-    Object intercept(@This WorkflowSessionBase<?> session,
+    Object intercept(@This WorkflowInstance<?> session,
                      @Origin Method method, @StepKeyArgs String stepKeyArgs,
                      @AllArguments Object... args) throws Throwable;
 

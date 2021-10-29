@@ -47,8 +47,8 @@ public class WorkflowEngine {
         metadata.stateAccessor = this.stateAccessor;
         metadata.workflowClass = workflowClazz;
 
-        DynamicType.Unloaded<WorkflowSessionBase> dynamicType = newByteBuddy(workflowClazz)
-                .subclass(WorkflowSessionBase.class)
+        DynamicType.Unloaded<WorkflowInstance> dynamicType = newByteBuddy(workflowClazz)
+                .subclass(WorkflowInstance.class)
                 .implement(workflowClazz)
                 .method(methodFilter(workflowClazz))
                 .intercept(MethodDelegation.withEmptyConfiguration()

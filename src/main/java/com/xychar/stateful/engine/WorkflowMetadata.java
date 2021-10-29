@@ -8,12 +8,12 @@ public class WorkflowMetadata<T> {
 
     public StepStateAccessor stateAccessor;
 
-    public WorkflowSessionBase<T> newSession() {
+    public WorkflowInstance<T> newSession() {
         try {
             @SuppressWarnings("unchecked")
-            WorkflowSessionBase<T> session = (WorkflowSessionBase<T>) workflowProxyClass.getConstructor().newInstance();
-            session.handler = new WorkflowHandler(this, session, stateAccessor);
-            return session;
+            WorkflowInstance<T> inst = (WorkflowInstance<T>) workflowProxyClass.getConstructor().newInstance();
+            inst.handler = new WorkflowHandler(this, inst, stateAccessor);
+            return inst;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

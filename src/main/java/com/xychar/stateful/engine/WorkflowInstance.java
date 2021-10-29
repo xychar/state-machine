@@ -1,19 +1,18 @@
 package com.xychar.stateful.engine;
 
-public class WorkflowSessionBase<T> implements WorkflowSession<T> {
+public class WorkflowInstance<T> implements WorkflowExecution<T> {
 
-    public String sessionId;
+    public String executionId;
 
     public StepHandler handler;
 
     @Override
-    public String getSessionId() {
-        return sessionId;
+    public String getExecutionId() {
+        return executionId;
     }
 
-    @Override
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
     }
 
     @Override

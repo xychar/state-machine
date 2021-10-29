@@ -1,8 +1,8 @@
 package com.xychar.stateful.engine;
 
-public interface WorkflowOperations {
+public interface StepOperations {
 
-    String getSessionId();
+    String getExecutionId();
 
     void waitFor(long milliseconds);
 

@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
 public class WorkflowHandler implements StepHandler {
 
     private final WorkflowMetadata<?> metadata;
-    private final WorkflowSessionBase<?> session;
+    private final WorkflowInstance<?> session;
     private final StepStateAccessor accessor;
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -20,7 +20,7 @@ public class WorkflowHandler implements StepHandler {
     static final Map<String, StepStateData> cache = new HashMap<>();
 
     public WorkflowHandler(WorkflowMetadata<?> metadata,
-                           WorkflowSessionBase<?> session,
+                           WorkflowInstance<?> session,
                            StepStateAccessor accessor) {
         this.metadata = metadata;
         this.session = session;
@@ -32,7 +32,7 @@ public class WorkflowHandler implements StepHandler {
         System.out.println("*** invoking method: " + method.getName());
 
         String stepKey = args.length > 0 ? args[0].toString() : "*";
-        StepStateData stateData = accessor.load(session.sessionId, method.getName(), stepKey);
+        StepStateData stateData = accessor.load(session.executionId, method.getName(), stepKey);
         if (stateData != null) {
             System.out.format("found method-call [%s:%s] in cache", method.getName(), stepKey);
             System.out.println();
@@ -59,7 +59,7 @@ public class WorkflowHandler implements StepHandler {
 
             stateData.exception = "";
             stateData.state = StepState.Done;
-            accessor.save(session.sessionId, method.getName(), stepKey, stateData);
+            accessor.save(session.executionId, method.getName(), stepKey, stateData);
             return result;
         } catch (Exception e) {
             stateData = new StepStateData();
@@ -68,7 +68,7 @@ public class WorkflowHandler implements StepHandler {
             stateData.returnValue = "";
             stateData.state = StepState.Retrying;
             stateData.nextRun = Instant.now().plusSeconds(30L);
-            accessor.save(session.sessionId, method.getName(), stepKey, stateData);
+            accessor.save(session.executionId, method.getName(), stepKey, stateData);
 
             SchedulingException scheduling = new SchedulingException();
             scheduling.currentMethod = method;
@@ -78,14 +78,14 @@ public class WorkflowHandler implements StepHandler {
     }
 
     @Override
-    public Object intercept(WorkflowSessionBase<?> session, Callable<?> invocation,
+    public Object intercept(WorkflowInstance<?> session, Callable<?> invocation,
                             Method method, String stepKeyArgs,
                             Object... args) throws Throwable {
         return invoke(session, invocation, method, stepKeyArgs, args);
     }
 
     @Override
-    public Object intercept(WorkflowSessionBase<?> session,
+    public Object intercept(WorkflowInstance<?> session,
                             Method method, String stepKeyArgs,
                             Object... args) throws Throwable {
         System.out.println("*** invoking non-default method: " + method.getName());
@@ -103,7 +103,7 @@ public class WorkflowHandler implements StepHandler {
     }
 
     @Override
-    public String getSessionId() {
-        return session.sessionId;
+    public String getExecutionId() {
+        return session.executionId;
     }
 }

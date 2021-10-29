@@ -3,13 +3,13 @@ package com.xychar.stateful.example;
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.StepKey;
 import com.xychar.stateful.engine.Workflow;
-import com.xychar.stateful.engine.WorkflowOperations;
+import com.xychar.stateful.engine.StepOperations;
 
 import java.security.SecureRandom;
 import java.util.Random;
 
 @Workflow
-public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2, WorkflowOperations {
+public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2, StepOperations {
 
     static final Random RAND = new SecureRandom();
 

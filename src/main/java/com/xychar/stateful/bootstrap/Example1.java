@@ -2,9 +2,10 @@ package com.xychar.stateful.bootstrap;
 
 import com.xychar.stateful.engine.SchedulingException;
 import com.xychar.stateful.engine.WorkflowEngine;
+import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.engine.WorkflowMetadata;
-import com.xychar.stateful.engine.WorkflowSession;
-import com.xychar.stateful.engine.WorkflowSessionBase;
+import com.xychar.stateful.engine.WorkflowExecution;
+import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.example.WorkflowChild1;
 import com.xychar.stateful.spring.AppConfig;
 import com.xychar.stateful.spring.Exceptions;
@@ -26,9 +27,9 @@ public class Example1 {
         engine.stateAccessor = store;
 
         WorkflowMetadata<WorkflowChild1> metadata = engine.buildFrom(WorkflowChild1.class);
-        WorkflowSession<WorkflowChild1> session = metadata.newSession();
+        WorkflowInstance<WorkflowChild1> session = metadata.newSession();
         // session.setSessionId("s-001");
-        session.setSessionId(UUID.randomUUID().toString());
+        session.setExecutionId(UUID.randomUUID().toString());
         WorkflowChild1 workflow = session.getWorkflowInstance();
 
         System.out.println("first-run: example1");
@@ -43,7 +44,7 @@ public class Example1 {
         String input1 = workflow.input();
         System.out.println("input1: " + input1);
 
-        String sessionId = workflow.getSessionId();
+        String sessionId = workflow.getExecutionId();
         System.out.println("SessionId: " + sessionId);
     }
 
@@ -56,9 +57,9 @@ public class Example1 {
         engine.stateAccessor = store;
 
         WorkflowMetadata<?> metadata = engine.buildFrom(workflowClazz);
-        WorkflowSessionBase<?> session = metadata.newSession();
+        WorkflowInstance<?> session = metadata.newSession();
 
-        session.setSessionId(UUID.randomUUID().toString());
+        session.setExecutionId(UUID.randomUUID().toString());
         Object workflow = session.getWorkflowInstance();
 
         Method method = workflowClazz.getMethod(methodName);
