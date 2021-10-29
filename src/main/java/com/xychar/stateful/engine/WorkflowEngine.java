@@ -44,7 +44,6 @@ public class WorkflowEngine {
         ClassLoader classLoader = workflowClazz.getClassLoader();
 
         WorkflowMetadata<T> metadata = new WorkflowMetadata<>();
-        metadata.stateAccessor = this.stateAccessor;
         metadata.workflowClass = workflowClazz;
 
         DynamicType.Unloaded<WorkflowInstance> dynamicType = newByteBuddy(workflowClazz)
@@ -65,6 +64,20 @@ public class WorkflowEngine {
 
         metadata.workflowProxyClass = dynamicType.load(classLoader).getLoaded();
         return metadata;
+    }
+
+    public <T> WorkflowInstance<T> newSession(WorkflowMetadata<T> metadata) {
+        try {
+            Class<?> proxyClass = metadata.workflowProxyClass;
+            @SuppressWarnings("unchecked")
+            WorkflowInstance<T> instance = (WorkflowInstance<T>) proxyClass.getConstructor().newInstance();
+            instance.handler = new WorkflowHandler(metadata, instance, stateAccessor);
+            return instance;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new WorkflowException("Failed to create workflow session", e);
+        }
     }
 
 }

@@ -27,7 +27,7 @@ public class Example1 {
         engine.stateAccessor = store;
 
         WorkflowMetadata<WorkflowChild1> metadata = engine.buildFrom(WorkflowChild1.class);
-        WorkflowInstance<WorkflowChild1> session = metadata.newSession();
+        WorkflowInstance<WorkflowChild1> session = engine.newSession(metadata);
         // session.setSessionId("s-001");
         session.setExecutionId(UUID.randomUUID().toString());
         WorkflowChild1 workflow = session.getWorkflowInstance();
@@ -57,7 +57,7 @@ public class Example1 {
         engine.stateAccessor = store;
 
         WorkflowMetadata<?> metadata = engine.buildFrom(workflowClazz);
-        WorkflowInstance<?> session = metadata.newSession();
+        WorkflowInstance<?> session = engine.newSession(metadata);
 
         session.setExecutionId(UUID.randomUUID().toString());
         Object workflow = session.getWorkflowInstance();
