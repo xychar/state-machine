@@ -14,13 +14,13 @@ public interface StepHandler extends StepOperations {
 
     @RuntimeType
     @BindingPriority(300)
-    Object intercept(@This WorkflowInstance<?> session, @SuperCall Callable<?> invocation,
+    Object intercept(@This WorkflowInstance<?> instance, @SuperCall Callable<?> invocation,
                      @Origin Method method, @StepKeyArgs String stepKeyArgs,
                      @AllArguments Object... args) throws Throwable;
 
     @RuntimeType
     @BindingPriority(500)
-    Object intercept(@This WorkflowInstance<?> session,
+    Object intercept(@This WorkflowInstance<?> instance,
                      @Origin Method method, @StepKeyArgs String stepKeyArgs,
                      @AllArguments Object... args) throws Throwable;
 

@@ -6,7 +6,8 @@ public class StepStateRow {
     public String stepName;
     public String stepKey;
     public String state;
-    public String lastError;
+    public String exception;
+    public String errorType;
     public String startTime;
     public String endTime;
 

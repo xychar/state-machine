@@ -1,8 +1,18 @@
 package com.xychar.stateful.store;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.xychar.stateful.engine.StepState;
 import com.xychar.stateful.engine.StepStateAccessor;
 import com.xychar.stateful.engine.StepStateData;
+import com.xychar.stateful.engine.StepStateException;
+import com.xychar.stateful.engine.WorkflowException;
+import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
 import org.mybatis.dynamic.sql.insert.GeneralInsertDSL;
 import org.mybatis.dynamic.sql.insert.GeneralInsertModel;
@@ -24,6 +34,11 @@ public class StepStateStore implements StepStateAccessor {
     private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate template;
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    private final ObjectMapper errorMapper = new ObjectMapper()
+            .addMixIn(Throwable.class, ThrowableMixIn.class);
+
     public StepStateStore(@Autowired JdbcTemplate jdbcTemplate,
                           @Autowired NamedParameterJdbcTemplate template) {
         this.jdbcTemplate = jdbcTemplate;
@@ -37,7 +52,8 @@ public class StepStateStore implements StepStateAccessor {
                 "  step_name varchar(200) NOT NULL,",
                 "  step_key varchar(200) NOT NULL,",
                 "  state varchar(20) NOT NULL,",
-                "  last_error text NULL,",
+                "  exception text NULL,",
+                "  error_type varchar(200) NULL,",
                 "  start_time varchar(50) NULL,",
                 "  end_time varchar(50) NULL,",
                 "  parameters text NULL,",
@@ -64,7 +80,8 @@ public class StepStateStore implements StepStateAccessor {
 
         UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(StepStateTable.TABLE)
                 .set(StepStateTable.state).equalToWhenPresent(row.state)
-                .set(StepStateTable.lastError).equalToWhenPresent(row.lastError)
+                .set(StepStateTable.exception).equalToWhenPresent(row.exception)
+                .set(StepStateTable.errorType).equalToWhenPresent(row.errorType)
                 .set(StepStateTable.startTime).equalToWhenPresent(row.startTime)
                 .set(StepStateTable.endTime).equalToWhenPresent(row.endTime)
                 .set(StepStateTable.parameters).equalToWhenPresent(row.parameters)
@@ -80,7 +97,8 @@ public class StepStateStore implements StepStateAccessor {
                     .set(StepStateTable.stepName).toValue(row.stepName)
                     .set(StepStateTable.stepKey).toValue(row.stepKey)
                     .set(StepStateTable.state).toValue(row.state)
-                    .set(StepStateTable.lastError).toValueWhenPresent(row.lastError)
+                    .set(StepStateTable.exception).toValueWhenPresent(row.exception)
+                    .set(StepStateTable.errorType).toValueWhenPresent(row.errorType)
                     .set(StepStateTable.startTime).toValueWhenPresent(row.startTime)
                     .set(StepStateTable.endTime).toValueWhenPresent(row.endTime)
                     .set(StepStateTable.parameters).toValueWhenPresent(row.parameters)
@@ -91,13 +109,34 @@ public class StepStateStore implements StepStateAccessor {
     }
 
     @Override
-    public StepStateData load(String sessionId, String stepName, String stepKey) {
-        StepStateRow row = loadState(sessionId, stepName, stepKey);
+    public StepStateData load(String sessionId, Method stepMethod, String stepKey) throws Throwable {
+        StepStateRow row = loadState(sessionId, stepMethod.getName(), stepKey);
         if (row != null) {
             StepStateData stateData = new StepStateData();
-            stateData.parameters = row.parameters;
-            stateData.returnValue = row.returnValue;
-            stateData.exception = row.lastError;
+            stateData.exception = null;
+            stateData.returnValue = null;
+            stateData.parameters = new Object[0];
+
+            if (StringUtils.isNotBlank(row.returnValue)) {
+                try {
+                    stateData.returnValue = mapper.readValue(row.returnValue, stepMethod.getReturnType());
+                } catch (JsonProcessingException e) {
+                    throw new StepStateException("Failed to decode step result", e);
+                }
+            }
+
+            if (StringUtils.isNotBlank(row.exception) && StringUtils.isNotBlank(row.errorType)) {
+                try {
+                    ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
+                    Class<?> errorType = Class.forName(row.errorType, true, threadClassLoader);
+                    stateData.exception = (Throwable) mapper.readValue(row.exception, errorType);
+                } catch (JsonProcessingException e) {
+                    throw new StepStateException("Failed to decode step error", e);
+                } catch (ClassNotFoundException e) {
+                    throw new StepStateException("Error type not found", e);
+                }
+            }
+
             stateData.state = StepState.valueOf(row.state);
             return stateData;
         }
@@ -106,24 +145,51 @@ public class StepStateStore implements StepStateAccessor {
     }
 
     @Override
-    public void save(String sessionId, String stepName, String stepKey, StepStateData stateData) {
+    public void save(String sessionId, Method stepMethod, String stepKey, StepStateData stateData) throws Throwable {
         StepStateRow row = new StepStateRow();
         row.sessionId = sessionId;
-        row.stepName = stepName;
+
+        try {
+            row.parameters = mapper.writeValueAsString(stateData.parameters);
+            System.out.println("args: " + row.parameters);
+        } catch (JsonProcessingException e) {
+            throw new StepStateException("Failed to encode step parameters", e);
+        }
+
+        try {
+            row.returnValue = mapper.writeValueAsString(stateData.returnValue);
+            System.out.println("ret: " + row.returnValue);
+        } catch (JsonProcessingException e) {
+            throw new StepStateException("Failed to encode step result", e);
+        }
+
+        try {
+            if (stateData.exception != null) {
+                row.errorType = stateData.exception.getClass().getName();
+                row.exception = errorMapper.writeValueAsString(stateData.exception);
+                System.out.println("err: " + row.exception);
+            }
+        } catch (JsonProcessingException e) {
+            throw new StepStateException("Failed to encode step error", e);
+        }
+
         row.stepKey = stepKey;
+        row.stepName = stepMethod.getName();
         row.state = stateData.state.name();
-        row.parameters = stateData.parameters;
-        row.returnValue = stateData.returnValue;
         saveState(row);
     }
 
-    @Override
-    public StepStateData load(String sessionId, Method stepMethod, String stepKey) {
-        return null;
-    }
+    static abstract class ThrowableMixIn {
+        @JsonIgnore
+        abstract Throwable getCause();
 
-    @Override
-    public void save(String sessionId, Method stepMethod, String stepKey, StepStateData item) {
+        @JsonIgnore
+        abstract StackTraceElement[] getStackTrace();
 
+        @JsonIgnore
+        abstract String getLocalizedMessage();
+
+        @JsonIgnore
+        abstract Throwable[] getSuppressed();
     }
 }
