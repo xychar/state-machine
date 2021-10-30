@@ -19,7 +19,7 @@ public interface StepHandler extends StepOperations {
                      @AllArguments Object... args) throws Throwable;
 
     /**
-     * Non-default methods are not allowed
+     * Non-default methods for service and dependency injections.
      */
     @RuntimeType
     @BindingPriority(500)
@@ -28,7 +28,7 @@ public interface StepHandler extends StepOperations {
                      @AllArguments Object... args) throws Throwable;
 
     /**
-     * Reserved method name
+     * Reserved method name.
      */
     @BindingPriority(100)
     void sleep(long milliseconds);
