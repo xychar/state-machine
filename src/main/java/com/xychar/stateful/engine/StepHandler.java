@@ -18,12 +18,18 @@ public interface StepHandler extends StepOperations {
                      @Origin Method method, @StepKeyArgs String stepKeyArgs,
                      @AllArguments Object... args) throws Throwable;
 
+    /**
+     * Non-default methods are not allowed
+     */
     @RuntimeType
     @BindingPriority(500)
     Object intercept(@This WorkflowInstance<?> instance,
                      @Origin Method method, @StepKeyArgs String stepKeyArgs,
                      @AllArguments Object... args) throws Throwable;
 
+    /**
+     * Reserved method name
+     */
     @BindingPriority(100)
     void sleep(long milliseconds);
 }

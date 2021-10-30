@@ -66,7 +66,7 @@ public class WorkflowHandler implements StepHandler {
         String stepKey = encodeStepKey(getStepKeys(stepKeyArgs, args));
         StepStateData stateData = accessor.load(instance.executionId, method, stepKey);
         if (stateData != null) {
-            System.out.format("found method-call [%s:%s] in cache%n", method.getName(), stepKey);
+            System.out.format("found method-call %s%s in cache%n", method.getName(), stepKey);
             if (StepState.Done.equals(stateData.state)) {
                 return stateData.returnValue;
             } else if (StepState.Failed.equals(stateData.state)) {
@@ -134,12 +134,42 @@ public class WorkflowHandler implements StepHandler {
     }
 
     @Override
+    public String getExecutionId() {
+        return instance.executionId;
+    }
+
+    @Override
     public void waitFor(long milliseconds) {
         System.out.println("*** waitFor: " + milliseconds);
     }
 
-    @Override
-    public String getExecutionId() {
-        return instance.executionId;
+    private StepStateData getCurrentStepStateData() {
+        StepStateData stateData = StepStateHolder.getStepStateData();
+        if (stateData != null) {
+            return stateData;
+        }
+
+        throw new WorkflowException("Step state is only available in step execution");
     }
+
+    @Override
+    public int getExecutionTimes() {
+        return getCurrentStepStateData().executionTimes;
+    }
+
+    @Override
+    public int getMaxRetryTimes() {
+        return getCurrentStepStateData().maxRetryTimes;
+    }
+
+    @Override
+    public Instant getStepStartTime() {
+        return getCurrentStepStateData().startTime;
+    }
+
+    @Override
+    public Instant getStepRerunTime() {
+        return getCurrentStepStateData().currentRun;
+    }
+
 }

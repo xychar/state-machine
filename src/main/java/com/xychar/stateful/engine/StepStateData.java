@@ -8,7 +8,7 @@ public class StepStateData {
     public Object[] parameters;
     public Throwable exception;
     public int executionTimes;
-    public int maxExecutionTimes;
+    public int maxRetryTimes;
     public Instant startTime;
     public Instant endTime;
     public Instant currentRun;

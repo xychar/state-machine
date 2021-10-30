@@ -37,5 +37,5 @@ test {
 }
 
 application {
-    mainClass = "com.xychar.stateful.bootstrap.Example1"
+    mainClass = "com.xychar.stateful.bootstrap.Benchmark"
 }

@@ -1,10 +1,11 @@
 package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Step;
+import com.xychar.stateful.engine.StepOperations;
 import com.xychar.stateful.engine.Workflow;
 
 @Workflow
-public interface BenchmarkRds {
+public interface BenchmarkRds extends StepOperations {
     @Step
     default String createRds() {
         System.out.println("*** Method [createRds] executed in BenchmarkRds");

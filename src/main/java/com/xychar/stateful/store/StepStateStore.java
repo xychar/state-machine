@@ -28,6 +28,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.time.Instant;
 
 @Component
 public class StepStateStore implements StepStateAccessor {
@@ -52,6 +53,7 @@ public class StepStateStore implements StepStateAccessor {
                 "  step_name varchar(200) NOT NULL,",
                 "  step_key varchar(200) NOT NULL,",
                 "  state varchar(20) NOT NULL,",
+                "  executions integer NOT NULL,",
                 "  start_time varchar(50) NULL,",
                 "  end_time varchar(50) NULL,",
                 "  return_value text NULL,",
@@ -80,6 +82,7 @@ public class StepStateStore implements StepStateAccessor {
 
         UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(StepStateTable.TABLE)
                 .set(StepStateTable.state).equalToWhenPresent(row.state)
+                .set(StepStateTable.executions).equalToWhenPresent(row.executions)
                 .set(StepStateTable.exception).equalToWhenPresent(row.exception)
                 .set(StepStateTable.errorType).equalToWhenPresent(row.errorType)
                 .set(StepStateTable.startTime).equalToWhenPresent(row.startTime)
@@ -97,12 +100,13 @@ public class StepStateStore implements StepStateAccessor {
                     .set(StepStateTable.stepName).toValue(row.stepName)
                     .set(StepStateTable.stepKey).toValue(row.stepKey)
                     .set(StepStateTable.state).toValue(row.state)
-                    .set(StepStateTable.exception).toValueWhenPresent(row.exception)
-                    .set(StepStateTable.errorType).toValueWhenPresent(row.errorType)
                     .set(StepStateTable.startTime).toValueWhenPresent(row.startTime)
                     .set(StepStateTable.endTime).toValueWhenPresent(row.endTime)
+                    .set(StepStateTable.executions).toValueWhenPresent(row.executions)
+                    .set(StepStateTable.returnValue).toValueWhenPresent(row.returnValue)
                     .set(StepStateTable.parameters).toValueWhenPresent(row.parameters)
-                    .set(StepStateTable.returnValue).toValueWhenPresent(row.returnValue);
+                    .set(StepStateTable.errorType).toValueWhenPresent(row.errorType)
+                    .set(StepStateTable.exception).toValueWhenPresent(row.exception);
 
             extensions.generalInsert(insertStatement);
         }
@@ -113,9 +117,18 @@ public class StepStateStore implements StepStateAccessor {
         StepStateRow row = loadState(sessionId, stepMethod.getName(), stepKey);
         if (row != null) {
             StepStateData stateData = new StepStateData();
-            stateData.exception = null;
+            stateData.executionTimes = row.executions != null ? row.executions : 0;
             stateData.returnValue = null;
             stateData.parameters = new Object[0];
+            stateData.exception = null;
+
+            if (StringUtils.isNotBlank(row.startTime)) {
+                stateData.startTime = Instant.parse(row.startTime);
+            }
+
+            if (StringUtils.isNotBlank(row.endTime)) {
+                stateData.endTime = Instant.parse(row.endTime);
+            }
 
             if (StringUtils.isNotBlank(row.returnValue)) {
                 try {
@@ -176,6 +189,13 @@ public class StepStateStore implements StepStateAccessor {
         row.stepKey = stepKey;
         row.stepName = stepMethod.getName();
         row.state = stateData.state.name();
+        row.executions = stateData.executionTimes;
+        row.startTime = stateData.startTime.toString();
+
+        if (stateData.endTime != null) {
+            row.endTime = stateData.endTime.toString();
+        }
+
         saveState(row);
     }
 
