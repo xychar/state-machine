@@ -1,5 +1,6 @@
 package com.xychar.stateful.engine;
 
+import java.lang.reflect.Method;
 import java.time.Instant;
 
 public class StepStateData {
@@ -15,4 +16,5 @@ public class StepStateData {
     public Instant endTime;
     public Instant currentRun;
     public Instant nextRun;
+    public Method stepMethod;
 }

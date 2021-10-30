@@ -1,5 +1,6 @@
 package com.xychar.stateful.engine;
 
+import java.lang.reflect.Method;
 import java.time.Instant;
 
 /**
@@ -10,6 +11,10 @@ public interface StepOperations {
     String getExecutionId();
 
     void waitFor(long milliseconds);
+
+    Method getStepMethod();
+
+    String getStepName();
 
     int getExecutionTimes();
 
@@ -36,9 +41,9 @@ public interface StepOperations {
 
     /**
      * Can only be used following a step query.
-     *
+     * <p>
      * Example:
-     *
+     * <p>
      * query.myStep()
      * StepState myStepState = query.getStepStateOfLastCall();
      */

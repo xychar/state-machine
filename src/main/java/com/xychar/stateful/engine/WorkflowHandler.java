@@ -101,6 +101,7 @@ public class WorkflowHandler implements StepHandler {
             stateData.currentRun = Instant.now();
         }
 
+        stateData.stepMethod = method;
         StepStateHolder.setStepStateData(stateData);
 
         try {
@@ -176,6 +177,16 @@ public class WorkflowHandler implements StepHandler {
         }
 
         throw new WorkflowException("Step state is only available in step execution");
+    }
+
+    @Override
+    public Method getStepMethod() {
+        return currentStepStateData().stepMethod;
+    }
+
+    @Override
+    public String getStepName() {
+        return currentStepStateData().stepMethod.getName();
     }
 
     @Override
