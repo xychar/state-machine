@@ -13,11 +13,11 @@ public interface StepOperations {
 
     int getExecutionTimes();
 
-    int getMaxRetryTimes();
+    int getMaxAttempts();
 
-    Instant getStepStartTime();
+    Instant getStepFirstRunTime();
 
-    Instant getStepRerunTime();
+    Instant getStepThisRunTime();
 
     /**
      * Mark step as successful.
@@ -33,4 +33,14 @@ public interface StepOperations {
      * Mark step as failed.
      */
     void fail(String message);
+
+    /**
+     * Can only be used following a step query.
+     *
+     * Example:
+     *
+     * query.myStep()
+     * StepState myStepState = query.getStepStateOfLastCall();
+     */
+    StepState getStepStateOfLastCall();
 }

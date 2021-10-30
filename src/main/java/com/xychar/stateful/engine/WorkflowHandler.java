@@ -10,14 +10,15 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class WorkflowHandler implements StepHandler {
-
     private final WorkflowMetadata<?> metadata;
     private final WorkflowInstance<?> instance;
     private final StepStateAccessor accessor;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final WorkflowHandler parentHandler;
+    private boolean isAsyncHandler = false;
+    private boolean isQueryHandler = false;
 
-    static final Map<String, StepStateData> cache = new HashMap<>();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public WorkflowHandler(WorkflowMetadata<?> metadata,
                            WorkflowInstance<?> instance,
@@ -25,6 +26,26 @@ public class WorkflowHandler implements StepHandler {
         this.metadata = metadata;
         this.instance = instance;
         this.accessor = accessor;
+        this.parentHandler = null;
+    }
+
+    public WorkflowHandler(WorkflowHandler parent,
+                           boolean isAsyncHandler,
+                           boolean isQueryHandler) {
+        this.metadata = parent.metadata;
+        this.instance = parent.instance;
+        this.accessor = parent.accessor;
+        this.parentHandler = parent;
+        this.isAsyncHandler = isAsyncHandler;
+        this.isQueryHandler = isQueryHandler;
+    }
+
+    public WorkflowHandler asyncHandler() {
+        return new WorkflowHandler(this, true, false);
+    }
+
+    public WorkflowHandler queryHandler() {
+        return new WorkflowHandler(this, false, true);
     }
 
     private int charToArgIndex(char value) {
@@ -148,7 +169,7 @@ public class WorkflowHandler implements StepHandler {
         System.out.println("*** waitFor: " + milliseconds);
     }
 
-    private StepStateData getCurrentStepStateData() {
+    private StepStateData currentStepStateData() {
         StepStateData stateData = StepStateHolder.getStepStateData();
         if (stateData != null) {
             return stateData;
@@ -159,43 +180,48 @@ public class WorkflowHandler implements StepHandler {
 
     @Override
     public int getExecutionTimes() {
-        return getCurrentStepStateData().executionTimes;
+        return currentStepStateData().executionTimes;
     }
 
     @Override
-    public int getMaxRetryTimes() {
-        return getCurrentStepStateData().maxRetryTimes;
+    public int getMaxAttempts() {
+        return currentStepStateData().maxRetryTimes;
     }
 
     @Override
-    public Instant getStepStartTime() {
-        return getCurrentStepStateData().startTime;
+    public Instant getStepFirstRunTime() {
+        return currentStepStateData().startTime;
     }
 
     @Override
-    public Instant getStepRerunTime() {
-        return getCurrentStepStateData().currentRun;
+    public Instant getStepThisRunTime() {
+        return currentStepStateData().currentRun;
     }
 
     @Override
     public void succeed(String message) {
-        StepStateData stateData = getCurrentStepStateData();
+        StepStateData stateData = currentStepStateData();
         stateData.result = StepState.Done;
         stateData.message = message;
     }
 
     @Override
     public void retry(String message) {
-        StepStateData stateData = getCurrentStepStateData();
+        StepStateData stateData = currentStepStateData();
         stateData.result = StepState.Retrying;
         stateData.message = message;
     }
 
     @Override
     public void fail(String message) {
-        StepStateData stateData = getCurrentStepStateData();
+        StepStateData stateData = currentStepStateData();
         stateData.result = StepState.Failed;
         stateData.message = message;
+    }
+
+    @Override
+    public StepState getStepStateOfLastCall() {
+        return null;
     }
 
 }
