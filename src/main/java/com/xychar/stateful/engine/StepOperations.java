@@ -18,4 +18,19 @@ public interface StepOperations {
     Instant getStepStartTime();
 
     Instant getStepRerunTime();
+
+    /**
+     * Mark step as successful.
+     */
+    void succeed(String message);
+
+    /**
+     * Mark step as retrying.
+     */
+    void retry(String message);
+
+    /**
+     * Mark step as failed.
+     */
+    void fail(String message);
 }

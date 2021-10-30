@@ -84,6 +84,8 @@ public class WorkflowHandler implements StepHandler {
 
         try {
             Object result = invocation.call();
+            stateData.state = StepState.Done;
+
             stateData.executionTimes++;
             stateData.endTime = Instant.now();
 
@@ -91,7 +93,10 @@ public class WorkflowHandler implements StepHandler {
             stateData.returnValue = result;
             stateData.parameters = args;
 
-            stateData.state = StepState.Done;
+            if (stateData.result != null) {
+                stateData.state = stateData.result;
+            }
+
             accessor.save(instance.executionId, method, stepKey, stateData);
             return result;
         } catch (Exception e) {
@@ -170,6 +175,27 @@ public class WorkflowHandler implements StepHandler {
     @Override
     public Instant getStepRerunTime() {
         return getCurrentStepStateData().currentRun;
+    }
+
+    @Override
+    public void succeed(String message) {
+        StepStateData stateData = getCurrentStepStateData();
+        stateData.result = StepState.Done;
+        stateData.message = message;
+    }
+
+    @Override
+    public void retry(String message) {
+        StepStateData stateData = getCurrentStepStateData();
+        stateData.result = StepState.Retrying;
+        stateData.message = message;
+    }
+
+    @Override
+    public void fail(String message) {
+        StepStateData stateData = getCurrentStepStateData();
+        stateData.result = StepState.Failed;
+        stateData.message = message;
     }
 
 }

@@ -4,6 +4,8 @@ import java.time.Instant;
 
 public class StepStateData {
     public StepState state;
+    public StepState result;
+    public String message;
     public Object returnValue;
     public Object[] parameters;
     public Throwable exception;
