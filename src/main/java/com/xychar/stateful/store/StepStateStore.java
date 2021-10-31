@@ -16,19 +16,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
 import org.mybatis.dynamic.sql.insert.GeneralInsertDSL;
 import org.mybatis.dynamic.sql.insert.GeneralInsertModel;
+import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.SelectDSL;
 import org.mybatis.dynamic.sql.select.SelectModel;
+import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.mybatis.dynamic.sql.update.UpdateDSL;
 import org.mybatis.dynamic.sql.update.UpdateModel;
 import org.mybatis.dynamic.sql.util.Buildable;
 import org.mybatis.dynamic.sql.util.spring.NamedParameterJdbcTemplateExtensions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.List;
 
 @Component
 public class StepStateStore implements StepStateAccessor {
@@ -63,6 +68,13 @@ public class StepStateStore implements StepStateAccessor {
                 "  PRIMARY KEY(session_id, step_name, step_key)",
                 ")"
         ));
+    }
+
+    public <T> T selectList(Buildable<SelectModel> selectStatement, ResultSetExtractor<T> rse) {
+        SelectStatementProvider statementProvider = selectStatement.build()
+                .render(RenderingStrategies.SPRING_NAMED_PARAMETER);
+        return template.query(statementProvider.getSelectStatement(),
+                statementProvider.getParameters(), rse);
     }
 
     public StepStateRow loadState(String sessionId, String stepName, String stepKey) {

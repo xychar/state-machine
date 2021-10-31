@@ -232,7 +232,12 @@ public class WorkflowHandler implements StepHandler {
 
     @Override
     public StepState getStepStateOfLastCall() {
-        return null;
+        StepStateData stateData = StepStateHolder.getPreviousStepStateData();
+        if (stateData != null) {
+            return stateData.state;
+        } else {
+            return StepState.Undefined;
+        }
     }
 
 }
