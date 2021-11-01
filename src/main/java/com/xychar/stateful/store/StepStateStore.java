@@ -52,22 +52,7 @@ public class StepStateStore implements StepStateAccessor {
     }
 
     public void createTableIfNotExists() {
-        jdbcTemplate.execute(String.join("\n",
-                "CREATE TABLE IF NOT EXISTS t_step_state(",
-                "  session_id varchar(50) NOT NULL,",
-                "  step_name varchar(200) NOT NULL,",
-                "  step_key varchar(200) NOT NULL,",
-                "  state varchar(20) NOT NULL,",
-                "  executions integer NOT NULL,",
-                "  start_time varchar(50) NULL,",
-                "  end_time varchar(50) NULL,",
-                "  return_value text NULL,",
-                "  parameters text NULL,",
-                "  error_type varchar(200) NULL,",
-                "  exception text NULL,",
-                "  PRIMARY KEY(session_id, step_name, step_key)",
-                ")"
-        ));
+        jdbcTemplate.execute(StepStateTable.CREATE_TABLE);
     }
 
     public <T> T selectList(Buildable<SelectModel> selectStatement, ResultSetExtractor<T> rse) {

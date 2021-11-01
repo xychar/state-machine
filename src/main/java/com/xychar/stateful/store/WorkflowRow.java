@@ -1,16 +1,16 @@
 package com.xychar.stateful.store;
 
-public class StepStateRow {
+public class WorkflowRow {
     public String sessionId;
-    public String stepName;
-    public String stepKey;
+    public String className;
+    public String methodName;
     public String state;
     public String exception;
     public String errorType;
     public String startTime;
     public String endTime;
-
-    public String parameters;
+    public Long nextRun;
+    public Long lastRun;
     public String returnValue;
     public Integer executions;
 }
