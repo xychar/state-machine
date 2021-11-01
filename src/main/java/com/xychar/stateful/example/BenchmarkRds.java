@@ -13,8 +13,12 @@ public interface BenchmarkRds extends StepOperations {
     }
 
     @Step
-    default void checkRds(String rdsId) {
+    default DbEndpoint checkRds(String rdsId) {
         System.out.println("*** Method [checkRds] executed in BenchmarkRds");
+        DbEndpoint endpoint = new DbEndpoint();
+        endpoint.host = "host-01";
+        endpoint.port = 1024;
+        return endpoint;
     }
 
     @Step
@@ -40,6 +44,12 @@ public interface BenchmarkRds extends StepOperations {
     }
 
     @Step
+    default void testDb(DbEndpoint ep) {
+        System.out.println("*** Method [testDb] executed in BenchmarkRds");
+        System.out.format("*** testDb, host=%s, port=%d%n", ep.host, ep.port);
+    }
+
+    @Step
     default String rds() {
         System.out.println("*** Method [rds] executed in BenchmarkRds");
 
@@ -51,6 +61,8 @@ public interface BenchmarkRds extends StepOperations {
         pingDb(host, port);
         createDb(host, port);
 
+        DbEndpoint ep = checkRds(rdsId);
+        testDb(ep);
         return rdsId;
     }
 }

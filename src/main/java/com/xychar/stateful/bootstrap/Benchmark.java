@@ -5,6 +5,7 @@ import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.engine.WorkflowMetadata;
 import com.xychar.stateful.example.BenchmarkEc2;
+import com.xychar.stateful.example.BenchmarkRds;
 import com.xychar.stateful.example.WorkflowChild1;
 import com.xychar.stateful.spring.AppConfig;
 import com.xychar.stateful.spring.Exceptions;
@@ -27,10 +28,10 @@ public class Benchmark {
 
         try {
             String sessionId = UUID.randomUUID().toString();
-            Utils.executeDynamic(context, BenchmarkEc2.class, "ec2", sessionId);
+            Utils.executeDynamic(context, BenchmarkRds.class, "rds", sessionId);
 
             System.out.println("=== Rerun Benchmark workflow.");
-            Utils.executeDynamic(context, BenchmarkEc2.class, "ec2", sessionId);
+            Utils.executeDynamic(context, BenchmarkRds.class, "rds", sessionId);
 
             System.out.println("=== Benchmark finished.");
         } catch (Exception e) {

@@ -10,4 +10,9 @@ public interface BenchmarkVpc {
         System.out.println("*** Method [tgw] executed in BenchmarkVpc");
         return "tgw-01";
     }
+
+    @Step
+    default void network() {
+        System.out.println("*** Method [network] executed in BenchmarkVpc");
+    }
 }
