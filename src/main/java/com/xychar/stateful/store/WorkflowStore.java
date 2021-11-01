@@ -3,7 +3,6 @@ package com.xychar.stateful.store;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.engine.StepState;
-import com.xychar.stateful.engine.StepStateAccessor;
 import com.xychar.stateful.engine.StepStateData;
 import com.xychar.stateful.engine.StepStateException;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +24,7 @@ import java.lang.reflect.Method;
 import java.time.Instant;
 
 @Component
-public class StepStateStore implements StepStateAccessor {
+public class WorkflowStore {
     private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate template;
 
@@ -34,66 +33,63 @@ public class StepStateStore implements StepStateAccessor {
     private final ObjectMapper errorMapper = new ObjectMapper()
             .addMixIn(Throwable.class, ThrowableMixIn.class);
 
-    public StepStateStore(@Autowired JdbcTemplate jdbcTemplate,
-                          @Autowired NamedParameterJdbcTemplate template) {
+    public WorkflowStore(@Autowired JdbcTemplate jdbcTemplate,
+                         @Autowired NamedParameterJdbcTemplate template) {
         this.jdbcTemplate = jdbcTemplate;
         this.template = template;
     }
 
     public void createTableIfNotExists() {
-        jdbcTemplate.execute(StepStateTable.CREATE_TABLE);
+        jdbcTemplate.execute(WorkflowTable.CREATE_TABLE);
     }
 
-    public StepStateRow loadState(String sessionId, String stepName, String stepKey) {
+    public WorkflowRow loadState(String sessionId, String className, String methodName) {
         NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
 
-        Buildable<SelectModel> selectStatement = SelectDSL.select(StepStateTable.TABLE.allColumns())
-                .from(StepStateTable.TABLE)
-                .where(StepStateTable.sessionId, SqlBuilder.isEqualTo(sessionId))
-                .and(StepStateTable.stepName, SqlBuilder.isEqualTo(stepName))
-                .and(StepStateTable.stepKey, SqlBuilder.isEqualTo(stepKey));
+        Buildable<SelectModel> selectStatement = SelectDSL.select(WorkflowTable.TABLE.allColumns())
+                .from(WorkflowTable.TABLE)
+                .where(WorkflowTable.sessionId, SqlBuilder.isEqualTo(sessionId))
+                .and(WorkflowTable.className, SqlBuilder.isEqualTo(className))
+                .and(WorkflowTable.methodName, SqlBuilder.isEqualTo(methodName));
 
-        return extensions.selectOne(selectStatement, StepStateTable::mappingAllColumns).orElse(null);
+        return extensions.selectOne(selectStatement, WorkflowTable::mappingAllColumns).orElse(null);
     }
 
-    public void saveState(StepStateRow row) {
+    public void saveState(WorkflowRow row) {
         NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
 
-        UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(StepStateTable.TABLE)
-                .set(StepStateTable.state).equalToWhenPresent(row.state)
-                .set(StepStateTable.executions).equalToWhenPresent(row.executions)
-                .set(StepStateTable.exception).equalToWhenPresent(row.exception)
-                .set(StepStateTable.errorType).equalToWhenPresent(row.errorType)
-                .set(StepStateTable.startTime).equalToWhenPresent(row.startTime)
-                .set(StepStateTable.endTime).equalToWhenPresent(row.endTime)
-                .set(StepStateTable.parameters).equalToWhenPresent(row.parameters)
-                .set(StepStateTable.returnValue).equalToWhenPresent(row.returnValue)
-                .where(StepStateTable.sessionId, SqlBuilder.isEqualTo(row.sessionId))
-                .and(StepStateTable.stepName, SqlBuilder.isEqualTo(row.stepName))
-                .and(StepStateTable.stepKey, SqlBuilder.isEqualTo(row.stepKey));
+        UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(WorkflowTable.TABLE)
+                .set(WorkflowTable.state).equalToWhenPresent(row.state)
+                .set(WorkflowTable.executions).equalToWhenPresent(row.executions)
+                .set(WorkflowTable.exception).equalToWhenPresent(row.exception)
+                .set(WorkflowTable.errorType).equalToWhenPresent(row.errorType)
+                .set(WorkflowTable.startTime).equalToWhenPresent(row.startTime)
+                .set(WorkflowTable.endTime).equalToWhenPresent(row.endTime)
+                .set(WorkflowTable.returnValue).equalToWhenPresent(row.returnValue)
+                .where(WorkflowTable.sessionId, SqlBuilder.isEqualTo(row.sessionId))
+                .and(WorkflowTable.className, SqlBuilder.isEqualTo(row.className))
+                .and(WorkflowTable.methodName, SqlBuilder.isEqualTo(row.methodName));
 
         int affectedRows = extensions.update(updateStatement);
         if (affectedRows == 0) {
-            Buildable<GeneralInsertModel> insertStatement = GeneralInsertDSL.insertInto(StepStateTable.TABLE)
-                    .set(StepStateTable.sessionId).toValue(row.sessionId)
-                    .set(StepStateTable.stepName).toValue(row.stepName)
-                    .set(StepStateTable.stepKey).toValue(row.stepKey)
-                    .set(StepStateTable.state).toValue(row.state)
-                    .set(StepStateTable.startTime).toValueWhenPresent(row.startTime)
-                    .set(StepStateTable.endTime).toValueWhenPresent(row.endTime)
-                    .set(StepStateTable.executions).toValueWhenPresent(row.executions)
-                    .set(StepStateTable.returnValue).toValueWhenPresent(row.returnValue)
-                    .set(StepStateTable.parameters).toValueWhenPresent(row.parameters)
-                    .set(StepStateTable.errorType).toValueWhenPresent(row.errorType)
-                    .set(StepStateTable.exception).toValueWhenPresent(row.exception);
+            Buildable<GeneralInsertModel> insertStatement = GeneralInsertDSL.insertInto(WorkflowTable.TABLE)
+                    .set(WorkflowTable.sessionId).toValue(row.sessionId)
+                    .set(WorkflowTable.className).toValue(row.className)
+                    .set(WorkflowTable.methodName).toValue(row.methodName)
+                    .set(WorkflowTable.state).toValue(row.state)
+                    .set(WorkflowTable.startTime).toValueWhenPresent(row.startTime)
+                    .set(WorkflowTable.endTime).toValueWhenPresent(row.endTime)
+                    .set(WorkflowTable.executions).toValueWhenPresent(row.executions)
+                    .set(WorkflowTable.returnValue).toValueWhenPresent(row.returnValue)
+                    .set(WorkflowTable.errorType).toValueWhenPresent(row.errorType)
+                    .set(WorkflowTable.exception).toValueWhenPresent(row.exception);
 
             extensions.generalInsert(insertStatement);
         }
     }
 
-    @Override
     public StepStateData load(String sessionId, Method stepMethod, String stepKey) throws Throwable {
-        StepStateRow row = loadState(sessionId, stepMethod.getName(), stepKey);
+        WorkflowRow row = loadState(sessionId, stepMethod.getName(), stepKey);
         if (row != null) {
             StepStateData stateData = new StepStateData();
             stateData.executionTimes = row.executions != null ? row.executions : 0;
@@ -136,9 +132,8 @@ public class StepStateStore implements StepStateAccessor {
         return null;
     }
 
-    @Override
-    public void save(String sessionId, Method stepMethod, String stepKey, StepStateData stateData) throws Throwable {
-        StepStateRow row = new StepStateRow();
+    public void save(String sessionId, String className, String methodName, StepStateData stateData) throws Throwable {
+        WorkflowRow row = new WorkflowRow();
         row.sessionId = sessionId;
 
         try {
@@ -146,13 +141,6 @@ public class StepStateStore implements StepStateAccessor {
             System.out.println("ret: " + row.returnValue);
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step result", e);
-        }
-
-        try {
-            row.parameters = mapper.writeValueAsString(stateData.parameters);
-            System.out.println("args: " + row.parameters);
-        } catch (JsonProcessingException e) {
-            throw new StepStateException("Failed to encode step parameters", e);
         }
 
         try {
@@ -165,8 +153,8 @@ public class StepStateStore implements StepStateAccessor {
             throw new StepStateException("Failed to encode step error", e);
         }
 
-        row.stepKey = stepKey;
-        row.stepName = stepMethod.getName();
+        row.className = className;
+        row.methodName = methodName;
         row.state = stateData.state.name();
         row.executions = stateData.executionTimes;
         row.startTime = stateData.startTime.toString();

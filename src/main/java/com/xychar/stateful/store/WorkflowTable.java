@@ -69,7 +69,7 @@ public class WorkflowTable extends SqlTable {
     }
 
     public static ResultSetExtractor<List<WorkflowRow>> resultSetExtractor() {
-        DataExtractor extractor = new DataExtractor(WorkflowRow.class);
+        DataExtractor<WorkflowRow> extractor = new DataExtractor<>(WorkflowRow.class);
 
         extractor.mapColumnToProperty(sessionId.name(), "sessionId");
         extractor.mapColumnToProperty(className.name(), "className");

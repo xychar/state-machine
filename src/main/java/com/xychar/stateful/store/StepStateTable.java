@@ -66,7 +66,7 @@ public class StepStateTable extends SqlTable {
     }
 
     public static ResultSetExtractor<List<StepStateRow>> resultSetExtractor() {
-        DataExtractor extractor = new DataExtractor(StepStateRow.class);
+        DataExtractor<StepStateRow> extractor = new DataExtractor<>(StepStateRow.class);
 
         extractor.mapColumnToProperty(sessionId.name(), "sessionId");
         extractor.mapColumnToProperty(stepName.name(), "stepName");
