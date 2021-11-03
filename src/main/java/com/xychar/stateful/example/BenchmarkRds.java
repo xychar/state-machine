@@ -50,7 +50,13 @@ public interface BenchmarkRds extends StepOperations {
     }
 
     @Step
+    private void hello() {
+        System.out.println("*** Private method [hello] executed in BenchmarkRds");
+    }
+
+    @Step
     default String rds() {
+        hello();
         System.out.println("*** Method [rds] executed in BenchmarkRds");
 
         String rdsId = createRds();

@@ -8,6 +8,9 @@ wrapper.enabled(false)
 group 'com.xy-char'
 version '1.0.1'
 
+sourceCompatibility = JavaVersion.VERSION_1_9
+targetCompatibility = JavaVersion.VERSION_1_9
+
 repositories {
     mavenCentral()
 }
