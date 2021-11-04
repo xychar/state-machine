@@ -9,7 +9,6 @@ public class StepStateRow {
     public String errorType;
     public String startTime;
     public String endTime;
-
     public String parameters;
     public String returnValue;
     public Integer executions;

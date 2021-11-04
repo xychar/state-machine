@@ -8,7 +8,7 @@ import java.util.List;
  */
 public class WorkflowScheduler {
 
-    List<WorkflowThread> scanScheduledThreads(Instant dueTime) {
+    List<WorkflowItem> scanScheduledThreads(Instant dueTime) {
         // nextRun <= dueTime and nextRun > lastRun
         // find threads need to run in the future 30 seconds
         // then wait for the period before the nearest thread

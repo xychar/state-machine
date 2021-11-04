@@ -1,10 +1,11 @@
 package com.xychar.stateful.store;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.engine.StepState;
 import com.xychar.stateful.engine.StepStateAccessor;
-import com.xychar.stateful.engine.StepStateData;
+import com.xychar.stateful.engine.StepStateItem;
 import com.xychar.stateful.engine.StepStateException;
 import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
@@ -92,28 +93,42 @@ public class StepStateStore implements StepStateAccessor {
     }
 
     @Override
-    public StepStateData load(String sessionId, Method stepMethod, String stepKey) throws Throwable {
+    public StepStateItem load(String sessionId, Method stepMethod, String stepKey) throws Throwable {
         StepStateRow row = loadState(sessionId, stepMethod.getName(), stepKey);
         if (row != null) {
-            StepStateData stateData = new StepStateData();
-            stateData.executionTimes = row.executions != null ? row.executions : 0;
-            stateData.returnValue = null;
-            stateData.parameters = new Object[0];
-            stateData.exception = null;
+            StepStateItem stepItem = new StepStateItem();
+            stepItem.executionTimes = row.executions != null ? row.executions : 0;
+            stepItem.returnValue = null;
+            stepItem.parameters = new Object[0];
+            stepItem.exception = null;
 
             if (StringUtils.isNotBlank(row.startTime)) {
-                stateData.startTime = Instant.parse(row.startTime);
+                stepItem.startTime = Instant.parse(row.startTime);
             }
 
             if (StringUtils.isNotBlank(row.endTime)) {
-                stateData.endTime = Instant.parse(row.endTime);
+                stepItem.endTime = Instant.parse(row.endTime);
             }
 
             if (StringUtils.isNotBlank(row.returnValue)) {
                 try {
-                    stateData.returnValue = mapper.readValue(row.returnValue, stepMethod.getReturnType());
+                    stepItem.returnValue = mapper.readValue(row.returnValue, stepMethod.getReturnType());
                 } catch (JsonProcessingException e) {
                     throw new StepStateException("Failed to decode step result", e);
+                }
+            }
+
+            if (StringUtils.isNotBlank(row.parameters)) {
+                try {
+                    JsonNode jsonTree = mapper.readTree(row.parameters);
+                    Class<?>[] paramTypes = stepMethod.getParameterTypes();
+                    stepItem.parameters = new Object[paramTypes.length];
+                    for (int i = 0; i < paramTypes.length; i++) {
+                        JsonNode param = jsonTree.get(i);
+                        stepItem.parameters[i] = mapper.treeToValue(param, paramTypes[i]);
+                    }
+                } catch (JsonProcessingException e) {
+                    throw new StepStateException("Failed to decode step parameters", e);
                 }
             }
 
@@ -121,7 +136,7 @@ public class StepStateStore implements StepStateAccessor {
                 try {
                     ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
                     Class<?> errorType = Class.forName(row.errorType, true, threadClassLoader);
-                    stateData.exception = (Throwable) mapper.readValue(row.exception, errorType);
+                    stepItem.exception = (Throwable) mapper.readValue(row.exception, errorType);
                 } catch (JsonProcessingException e) {
                     throw new StepStateException("Failed to decode step error", e);
                 } catch (ClassNotFoundException e) {
@@ -129,36 +144,36 @@ public class StepStateStore implements StepStateAccessor {
                 }
             }
 
-            stateData.state = StepState.valueOf(row.state);
-            return stateData;
+            stepItem.state = StepState.valueOf(row.state);
+            return stepItem;
         }
 
         return null;
     }
 
     @Override
-    public void save(String sessionId, Method stepMethod, String stepKey, StepStateData stateData) throws Throwable {
+    public void save(String sessionId, Method stepMethod, String stepKey, StepStateItem stepItem) throws Throwable {
         StepStateRow row = new StepStateRow();
         row.sessionId = sessionId;
 
         try {
-            row.returnValue = mapper.writeValueAsString(stateData.returnValue);
+            row.returnValue = mapper.writeValueAsString(stepItem.returnValue);
             System.out.println("ret: " + row.returnValue);
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step result", e);
         }
 
         try {
-            row.parameters = mapper.writeValueAsString(stateData.parameters);
+            row.parameters = mapper.writeValueAsString(stepItem.parameters);
             System.out.println("args: " + row.parameters);
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step parameters", e);
         }
 
         try {
-            if (stateData.exception != null) {
-                row.errorType = stateData.exception.getClass().getName();
-                row.exception = errorMapper.writeValueAsString(stateData.exception);
+            if (stepItem.exception != null) {
+                row.errorType = stepItem.exception.getClass().getName();
+                row.exception = errorMapper.writeValueAsString(stepItem.exception);
                 System.out.println("err: " + row.exception);
             }
         } catch (JsonProcessingException e) {
@@ -167,12 +182,12 @@ public class StepStateStore implements StepStateAccessor {
 
         row.stepKey = stepKey;
         row.stepName = stepMethod.getName();
-        row.state = stateData.state.name();
-        row.executions = stateData.executionTimes;
-        row.startTime = stateData.startTime.toString();
+        row.state = stepItem.state.name();
+        row.executions = stepItem.executionTimes;
+        row.startTime = stepItem.startTime.toString();
 
-        if (stateData.endTime != null) {
-            row.endTime = stateData.endTime.toString();
+        if (stepItem.endTime != null) {
+            row.endTime = stepItem.endTime.toString();
         }
 
         saveState(row);

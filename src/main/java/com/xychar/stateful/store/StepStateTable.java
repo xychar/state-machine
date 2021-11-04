@@ -46,23 +46,23 @@ public class StepStateTable extends SqlTable {
     }
 
     public static StepStateRow mappingAllColumns(ResultSet rs, int rowNum) throws SQLException {
-        StepStateRow record = new StepStateRow();
+        StepStateRow row = new StepStateRow();
 
-        record.sessionId = rs.getString(sessionId.name());
-        record.stepName = rs.getString(stepName.name());
-        record.stepKey = rs.getString(stepKey.name());
-        record.state = rs.getString(state.name());
+        row.sessionId = rs.getString(sessionId.name());
+        row.stepName = rs.getString(stepName.name());
+        row.stepKey = rs.getString(stepKey.name());
+        row.state = rs.getString(state.name());
 
-        record.executions = rs.getInt(executions.name());
-        record.startTime = rs.getString(startTime.name());
-        record.endTime = rs.getString(endTime.name());
+        row.executions = rs.getInt(executions.name());
+        row.startTime = rs.getString(startTime.name());
+        row.endTime = rs.getString(endTime.name());
 
-        record.returnValue = rs.getString(returnValue.name());
-        record.parameters = rs.getString(parameters.name());
-        record.errorType = rs.getString(errorType.name());
-        record.exception = rs.getString(exception.name());
+        row.returnValue = rs.getString(returnValue.name());
+        row.parameters = rs.getString(parameters.name());
+        row.errorType = rs.getString(errorType.name());
+        row.exception = rs.getString(exception.name());
 
-        return record;
+        return row;
     }
 
     public static ResultSetExtractor<List<StepStateRow>> resultSetExtractor() {

@@ -5,6 +5,7 @@ import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.engine.WorkflowMetadata;
 import com.xychar.stateful.store.StepStateStore;
+import com.xychar.stateful.store.WorkflowStore;
 import org.springframework.context.support.AbstractApplicationContext;
 
 import java.lang.reflect.InvocationTargetException;
@@ -15,11 +16,14 @@ public class Utils {
 
     public static void executeDynamic(AbstractApplicationContext context, Class<?> workflowClazz,
                                       String methodName, String sessionId) throws Exception {
-        StepStateStore store = context.getBean(StepStateStore.class);
-        store.createTableIfNotExists();
+        StepStateStore stepStateStore = context.getBean(StepStateStore.class);
+        stepStateStore.createTableIfNotExists();
+
+        WorkflowStore workflowStore = context.getBean(WorkflowStore.class);
+        workflowStore.createTableIfNotExists();
 
         WorkflowEngine engine = new WorkflowEngine();
-        engine.stateAccessor = store;
+        engine.stateAccessor = stepStateStore;
 
         WorkflowMetadata<?> metadata = engine.buildFrom(workflowClazz);
         WorkflowInstance<?> session = engine.newSession(metadata);

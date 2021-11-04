@@ -7,8 +7,8 @@ import java.time.Instant;
  * Utils to access step states in step executions.¬
  */
 public class Steps {
-    private static StepStateData currentStep() {
-        StepStateData stateData = StepStateHolder.getStepStateData();
+    private static StepStateItem currentStep() {
+        StepStateItem stateData = StepStateHolder.getStepStateData();
         if (stateData == null) {
             throw new WorkflowException("Step state is only available in step execution");
         } else {
@@ -41,25 +41,25 @@ public class Steps {
     }
 
     public static void succeed(String message) {
-        StepStateData stateData = currentStep();
+        StepStateItem stateData = currentStep();
         stateData.result = StepState.Done;
         stateData.message = message;
     }
 
     public static void retry(String message) {
-        StepStateData stateData = currentStep();
+        StepStateItem stateData = currentStep();
         stateData.result = StepState.Retrying;
         stateData.message = message;
     }
 
     public static void fail(String message) {
-        StepStateData stateData = currentStep();
+        StepStateItem stateData = currentStep();
         stateData.result = StepState.Failed;
         stateData.message = message;
     }
 
     public static StepState getStepStateOfLastCall() {
-        StepStateData stateData = StepStateHolder.getPreviousStepStateData();
+        StepStateItem stateData = StepStateHolder.getPreviousStepStateData();
         if (stateData != null) {
             return stateData.state;
         } else {

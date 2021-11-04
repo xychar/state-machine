@@ -3,7 +3,7 @@ package com.xychar.stateful.engine;
 import java.lang.reflect.Method;
 import java.time.Instant;
 
-public class StepStateData {
+public class StepStateItem {
     public StepState state;
     public StepState result;
     public String message;
