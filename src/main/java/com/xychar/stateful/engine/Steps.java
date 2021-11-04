@@ -58,6 +58,18 @@ public class Steps {
         stateData.message = message;
     }
 
+    public static <T> T async(T that) {
+        WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
+        WorkflowHandler handler = (WorkflowHandler) instance.handler;
+        return ((WorkflowInstance<T>) handler.query()).getWorkflowInstance();
+    }
+
+    public static <T> T query(T that) {
+        WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
+        WorkflowHandler handler = (WorkflowHandler) instance.handler;
+        return ((WorkflowInstance<T>) handler.query()).getWorkflowInstance();
+    }
+
     public static StepState getStepStateOfLastCall() {
         StepStateItem stateData = StepStateHolder.getPreviousStepStateData();
         if (stateData != null) {

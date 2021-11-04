@@ -38,12 +38,30 @@ public class WorkflowHandler implements StepHandler {
         this.isQueryHandler = isQueryHandler;
     }
 
-    public WorkflowHandler asyncHandler() {
-        return new WorkflowHandler(this, true, false);
+    public <T> WorkflowInstance<T> newSession(WorkflowMetadata<T> metadata) {
+        try {
+            Class<?> proxyClass = metadata.workflowProxyClass;
+            @SuppressWarnings("unchecked")
+            WorkflowInstance<T> instance = (WorkflowInstance<T>) proxyClass.getConstructor().newInstance();
+            instance.handler = new WorkflowHandler(metadata, instance, accessor);
+            return instance;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new WorkflowException("Failed to create workflow session", e);
+        }
     }
 
-    public WorkflowHandler queryHandler() {
-        return new WorkflowHandler(this, false, true);
+    public WorkflowInstance<?> async() {
+        WorkflowInstance<?> instance = newSession(metadata);
+        instance.handler = new WorkflowHandler(this, true, false);
+        return instance;
+    }
+
+    public WorkflowInstance<?> query() {
+        WorkflowInstance<?> instance = newSession(metadata);
+        instance.handler = new WorkflowHandler(this, false, true);
+        return instance;
     }
 
     private int charToArgIndex(char value) {
@@ -85,7 +103,7 @@ public class WorkflowHandler implements StepHandler {
         String stepKey = encodeStepKey(getStepKeys(stepKeyArgs, args));
         StepStateItem stateData = accessor.load(instance.executionId, method, stepKey);
         if (stateData != null) {
-            System.out.format("found method-call %s%s in cache%n", method.getName(), stepKey);
+            System.out.format("found method-call: %s%s%n", method.getName(), stepKey);
             if (StepState.Done.equals(stateData.state)) {
                 return stateData.returnValue;
             } else if (StepState.Failed.equals(stateData.state)) {
