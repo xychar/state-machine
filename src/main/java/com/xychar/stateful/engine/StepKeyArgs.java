@@ -40,23 +40,13 @@ public @interface StepKeyArgs {
             return StepKeyArgs.class;
         }
 
-        private char argIndexToChar(int value) {
-            if (value >= 0 && value < 10) {
-                return (char) ('0' + value);
-            } else if (value < 36) {
-                return (char) ('a' + (value - 10));
-            } else {
-                throw new IndexOutOfBoundsException("Too many arguments");
-            }
-        }
-
         private String buildStepKeyArgs(MethodDescription source) {
             StringBuilder stepKeyArgs = new StringBuilder();
             ParameterList<?> parameters = source.getParameters();
             for (int i = 0, count = source.getParameters().size(); i < count; i++) {
                 AnnotationList declaredAnnotations = parameters.get(i).getDeclaredAnnotations();
                 if (declaredAnnotations.isAnnotationPresent(StepKey.class)) {
-                    stepKeyArgs.append(argIndexToChar(i));
+                    stepKeyArgs.append(StepKeyHelper.argIndexToChar(i));
                 }
             }
 

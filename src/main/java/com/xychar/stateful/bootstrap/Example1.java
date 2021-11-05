@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public class Example1 {
 
-    public static void executeExample(AbstractApplicationContext context) throws Exception {
+    public static void executeExample(AbstractApplicationContext context) {
         StepStateStore store = context.getBean(StepStateStore.class);
         store.createTableIfNotExists();
 
@@ -22,7 +22,7 @@ public class Example1 {
         engine.stateAccessor = store;
 
         WorkflowMetadata<WorkflowChild1> metadata = engine.buildFrom(WorkflowChild1.class);
-        WorkflowInstance<WorkflowChild1> session = engine.newSession(metadata);
+        WorkflowInstance<WorkflowChild1> session = engine.newWorkflowInstance(metadata);
 
         session.setExecutionId(UUID.randomUUID().toString());
         WorkflowChild1 workflow = session.getWorkflowInstance();

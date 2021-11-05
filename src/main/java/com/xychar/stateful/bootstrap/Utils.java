@@ -10,7 +10,6 @@ import org.springframework.context.support.AbstractApplicationContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.UUID;
 
 public class Utils {
 
@@ -26,7 +25,7 @@ public class Utils {
         engine.stateAccessor = stepStateStore;
 
         WorkflowMetadata<?> metadata = engine.buildFrom(workflowClazz);
-        WorkflowInstance<?> session = engine.newSession(metadata);
+        WorkflowInstance<?> session = engine.newWorkflowInstance(metadata);
 
         session.setExecutionId(sessionId);
         Object workflow = session.getWorkflowInstance();

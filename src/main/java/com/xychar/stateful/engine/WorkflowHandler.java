@@ -13,8 +13,8 @@ public class WorkflowHandler implements StepHandler {
     private final StepStateAccessor accessor;
 
     private final WorkflowHandler parentHandler;
-    private boolean isAsyncHandler = false;
-    private boolean isQueryHandler = false;
+    private volatile WorkflowHandler asyncHandler;
+    private volatile WorkflowHandler queryHandler;
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -25,67 +25,55 @@ public class WorkflowHandler implements StepHandler {
         this.instance = instance;
         this.accessor = accessor;
         this.parentHandler = null;
+        this.asyncHandler = null;
+        this.queryHandler = null;
     }
 
-    public WorkflowHandler(WorkflowHandler parent,
-                           boolean isAsyncHandler,
-                           boolean isQueryHandler) {
+    public WorkflowHandler(WorkflowHandler parent, WorkflowInstance<?> instance) {
         this.metadata = parent.metadata;
-        this.instance = parent.instance;
         this.accessor = parent.accessor;
+        this.instance = instance;
         this.parentHandler = parent;
-        this.isAsyncHandler = isAsyncHandler;
-        this.isQueryHandler = isQueryHandler;
+        this.asyncHandler = null;
+        this.queryHandler = null;
     }
 
-    public <T> WorkflowInstance<T> newSession(WorkflowMetadata<T> metadata) {
-        try {
-            Class<?> proxyClass = metadata.workflowProxyClass;
-            @SuppressWarnings("unchecked")
-            WorkflowInstance<T> instance = (WorkflowInstance<T>) proxyClass.getConstructor().newInstance();
-            instance.handler = new WorkflowHandler(metadata, instance, accessor);
-            return instance;
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new WorkflowException("Failed to create workflow session", e);
+    public synchronized WorkflowInstance<?> async() {
+        if (parentHandler != null) {
+            return parentHandler.async();
         }
-    }
 
-    public WorkflowInstance<?> async() {
-        WorkflowInstance<?> instance = newSession(metadata);
-        instance.handler = new WorkflowHandler(this, true, false);
-        return instance;
+        if (asyncHandler == null) {
+            WorkflowInstance<?> instance = metadata.newInstance();
+            asyncHandler = new WorkflowHandler(this, instance);
+            instance.handler = asyncHandler;
+            return instance;
+        }
+
+        return asyncHandler.instance;
     }
 
     public WorkflowInstance<?> query() {
-        WorkflowInstance<?> instance = newSession(metadata);
-        instance.handler = new WorkflowHandler(this, false, true);
-        return instance;
+        if (parentHandler != null) {
+            return parentHandler.query();
+        }
+
+        if (queryHandler == null) {
+            WorkflowInstance<?> instance = metadata.newInstance();
+            queryHandler = new WorkflowHandler(this, instance);
+            instance.handler = queryHandler;
+            return instance;
+        }
+
+        return queryHandler.instance;
     }
 
-    private int charToArgIndex(char value) {
-        if (value >= '0' && value <= '9') {
-            return (int) (value - '0');
-        } else if (value >= 'a' && value <= 'z') {
-            return (int) (value - 'a') + 10;
-        } else {
-            throw new IndexOutOfBoundsException("Invalid argument index");
-        }
+    private boolean isAsyncHandler() {
+        return parentHandler != null && parentHandler.asyncHandler == this;
     }
 
-    private Object[] getStepKeys(String stepKeyArgs, Object[] args) {
-        if (stepKeyArgs != null && !stepKeyArgs.isEmpty()) {
-            Object[] stepKeys = new Object[stepKeyArgs.length()];
-            for (int i = 0; i < stepKeyArgs.length(); i++) {
-                int argIndex = charToArgIndex(stepKeyArgs.charAt(i));
-                stepKeys[i] = args[argIndex];
-            }
-
-            return stepKeys;
-        } else {
-            return new Object[0];
-        }
+    private boolean isQueryHandler() {
+        return parentHandler != null && parentHandler.queryHandler == this;
     }
 
     private String encodeStepKey(Object[] stepKeys) throws Throwable {
@@ -100,7 +88,7 @@ public class WorkflowHandler implements StepHandler {
                          String stepKeyArgs, Object[] args) throws Throwable {
         System.out.println("*** invoking method: " + method.getName());
 
-        String stepKey = encodeStepKey(getStepKeys(stepKeyArgs, args));
+        String stepKey = encodeStepKey(StepKeyHelper.getStepKeys(stepKeyArgs, args));
         StepStateItem stateData = accessor.load(instance.executionId, method, stepKey);
         if (stateData != null) {
             System.out.format("found method-call: %s%s%n", method.getName(), stepKey);
