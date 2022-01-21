@@ -10,7 +10,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 
-public interface StepHandler extends StepOperations {
+public interface StepHandler {
 
     @RuntimeType
     @BindingPriority(300)
@@ -32,4 +32,6 @@ public interface StepHandler extends StepOperations {
      */
     @BindingPriority(100)
     void sleep(long milliseconds);
+
+    String getExecutionId();
 }

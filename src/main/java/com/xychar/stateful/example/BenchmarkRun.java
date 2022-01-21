@@ -1,11 +1,10 @@
 package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Step;
-import com.xychar.stateful.engine.StepOperations;
 import com.xychar.stateful.engine.Workflow;
 
 @Workflow
-public interface BenchmarkRun extends BenchmarkVpc, BenchmarkEc2, BenchmarkRds, StepOperations {
+public interface BenchmarkRun extends BenchmarkVpc, BenchmarkEc2, BenchmarkRds {
     @Step
     default void installSoftware(String ec2Id) {
         System.out.println("*** Method [installSoftware] executed in BenchmarkRun");
@@ -49,5 +48,12 @@ public interface BenchmarkRun extends BenchmarkVpc, BenchmarkEc2, BenchmarkRds, 
         start(ec2Id);
         check(ec2Id);
         finish(ec2Id);
+    }
+
+    @Step
+    default void main() {
+        System.out.println("*** Method [main] executed in BenchmarkRun");
+        String ec2Id = ec2();
+        execute(ec2Id);
     }
 }

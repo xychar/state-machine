@@ -61,13 +61,24 @@ public class Steps {
     public static <T> T async(T that) {
         WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
         WorkflowHandler handler = (WorkflowHandler) instance.handler;
-        return ((WorkflowInstance<T>) handler.query()).getWorkflowInstance();
+        return ((WorkflowInstance<T>) handler.async()).getWorkflowInstance();
     }
 
     public static <T> T query(T that) {
         WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
         WorkflowHandler handler = (WorkflowHandler) instance.handler;
         return ((WorkflowInstance<T>) handler.query()).getWorkflowInstance();
+    }
+
+    public static <T> String getExecutionId(T that) {
+        WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
+        return instance.executionId;
+    }
+
+    public static <T> void sleep(T that, long milliseconds) {
+        WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
+        System.out.println("*** executionId: " + instance.executionId +
+                " sleep: " + milliseconds);
     }
 
     public static StepState getStepStateOfLastCall() {

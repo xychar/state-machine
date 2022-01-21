@@ -53,7 +53,7 @@ public class WorkflowHandler implements StepHandler {
         return asyncHandler.instance;
     }
 
-    public WorkflowInstance<?> query() {
+    public synchronized WorkflowInstance<?> query() {
         if (parentHandler != null) {
             return parentHandler.query();
         }
@@ -69,11 +69,11 @@ public class WorkflowHandler implements StepHandler {
     }
 
     private boolean isAsyncHandler() {
-        return parentHandler != null && parentHandler.asyncHandler == this;
+        return parentHandler != null && this == parentHandler.asyncHandler;
     }
 
     private boolean isQueryHandler() {
-        return parentHandler != null && parentHandler.queryHandler == this;
+        return parentHandler != null && this == parentHandler.queryHandler;
     }
 
     private String encodeStepKey(Object[] stepKeys) throws Throwable {
@@ -90,7 +90,19 @@ public class WorkflowHandler implements StepHandler {
 
         String stepKey = encodeStepKey(StepKeyHelper.getStepKeys(stepKeyArgs, args));
         StepStateItem stateData = accessor.load(instance.executionId, method, stepKey);
-        if (stateData != null) {
+        if (stateData == null) {
+            stateData = new StepStateItem();
+            stateData.startTime = Instant.now();
+            stateData.currentRun = Instant.now();
+        }
+
+        stateData.stepMethod = method;
+        if (isQueryHandler()) {
+            StepStateHolder.setPreviousStepStateData(stateData);
+            return null;
+        }
+
+        if (stateData.state != null) {
             System.out.format("found method-call: %s%s%n", method.getName(), stepKey);
             if (StepState.Done.equals(stateData.state)) {
                 return stateData.returnValue;
@@ -99,13 +111,8 @@ public class WorkflowHandler implements StepHandler {
             }
 
             stateData.currentRun = Instant.now();
-        } else {
-            stateData = new StepStateItem();
-            stateData.startTime = Instant.now();
-            stateData.currentRun = Instant.now();
         }
 
-        stateData.stepMethod = method;
         StepStateHolder.setStepStateData(stateData);
 
         try {
@@ -169,79 +176,12 @@ public class WorkflowHandler implements StepHandler {
         return instance.executionId;
     }
 
-    @Override
-    public void waitFor(long milliseconds) {
-        System.out.println("*** waitFor: " + milliseconds);
-    }
-
     private StepStateItem currentStepStateData() {
         StepStateItem stateData = StepStateHolder.getStepStateData();
-        if (stateData != null) {
+        if (stateData == null) {
+            throw new WorkflowException("Step state is only available in step execution");
+        } else {
             return stateData;
         }
-
-        throw new WorkflowException("Step state is only available in step execution");
     }
-
-    @Override
-    public Method getStepMethod() {
-        return currentStepStateData().stepMethod;
-    }
-
-    @Override
-    public String getStepName() {
-        return currentStepStateData().stepMethod.getName();
-    }
-
-    @Override
-    public int getExecutionTimes() {
-        return currentStepStateData().executionTimes;
-    }
-
-    @Override
-    public int getMaxAttempts() {
-        return currentStepStateData().maxRetryTimes;
-    }
-
-    @Override
-    public Instant getStepFirstRunTime() {
-        return currentStepStateData().startTime;
-    }
-
-    @Override
-    public Instant getStepThisRunTime() {
-        return currentStepStateData().currentRun;
-    }
-
-    @Override
-    public void succeed(String message) {
-        StepStateItem stateData = currentStepStateData();
-        stateData.result = StepState.Done;
-        stateData.message = message;
-    }
-
-    @Override
-    public void retry(String message) {
-        StepStateItem stateData = currentStepStateData();
-        stateData.result = StepState.Retrying;
-        stateData.message = message;
-    }
-
-    @Override
-    public void fail(String message) {
-        StepStateItem stateData = currentStepStateData();
-        stateData.result = StepState.Failed;
-        stateData.message = message;
-    }
-
-    @Override
-    public StepState getStepStateOfLastCall() {
-        StepStateItem stateData = StepStateHolder.getPreviousStepStateData();
-        if (stateData != null) {
-            return stateData.state;
-        } else {
-            return StepState.Undefined;
-        }
-    }
-
 }

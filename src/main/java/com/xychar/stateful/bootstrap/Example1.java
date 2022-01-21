@@ -1,5 +1,6 @@
 package com.xychar.stateful.bootstrap;
 
+import com.xychar.stateful.engine.Steps;
 import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.engine.WorkflowMetadata;
@@ -39,7 +40,7 @@ public class Example1 {
         String input1 = workflow.input();
         System.out.println("input1: " + input1);
 
-        String sessionId = workflow.getExecutionId();
+        String sessionId = Steps.getExecutionId(workflow);
         System.out.println("SessionId: " + sessionId);
     }
 
