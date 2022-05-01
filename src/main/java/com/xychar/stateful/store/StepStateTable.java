@@ -23,6 +23,8 @@ public class StepStateTable extends SqlTable {
             "  parameters text NULL,",
             "  error_type varchar(200) NULL,",
             "  exception text NULL,",
+            "  user_var_str varchar(200) NULL,",
+            "  user_var_int integer NULL,",
             "  PRIMARY KEY(session_id, step_name, step_key)",
             ")"
     );
@@ -40,6 +42,8 @@ public class StepStateTable extends SqlTable {
     public static final SqlColumn<String> parameters = TABLE.column("parameters", JDBCType.VARCHAR);
     public static final SqlColumn<String> errorType = TABLE.column("error_type", JDBCType.VARCHAR);
     public static final SqlColumn<String> exception = TABLE.column("exception", JDBCType.VARCHAR);
+    public static final SqlColumn<String> userVarStr = TABLE.column("user_var_str", JDBCType.VARCHAR);
+    public static final SqlColumn<Integer> userVarInt = TABLE.column("user_var_int", JDBCType.INTEGER);
 
     protected StepStateTable() {
         super("t_step_state");
@@ -61,6 +65,9 @@ public class StepStateTable extends SqlTable {
         row.parameters = rs.getString(parameters.name());
         row.errorType = rs.getString(errorType.name());
         row.exception = rs.getString(exception.name());
+
+        row.userVarStr = rs.getString(userVarStr.name());
+        row.userVarInt = rs.getInt(userVarInt.name());
 
         return row;
     }

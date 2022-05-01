@@ -2,6 +2,10 @@ package com.xychar.stateful.engine;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xychar.stateful.exception.SchedulingException;
+import com.xychar.stateful.exception.StepFailedException;
+import com.xychar.stateful.exception.StepStateException;
+import com.xychar.stateful.exception.WorkflowException;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -137,15 +141,24 @@ public class WorkflowHandler implements StepHandler {
             stateData.exception = e;
             stateData.returnValue = null;
             stateData.parameters = args;
-            stateData.state = StepState.Retrying;
-            stateData.nextRun = Instant.now().plusSeconds(30L);
-            accessor.save(instance.executionId, method, stepKey, stateData);
 
-            SchedulingException scheduling = new SchedulingException();
-            scheduling.stepStateItem = stateData;
-            scheduling.currentMethod = method;
-            scheduling.waitingTime = 2500;
-            throw scheduling;
+            Retry retryParams = method.getAnnotation(Retry.class);
+            if (retryParams != null) {
+                stateData.state = StepState.Retrying;
+                stateData.nextRun = Instant.now().plusSeconds(30L);
+                accessor.save(instance.executionId, method, stepKey, stateData);
+
+                SchedulingException scheduling = new SchedulingException();
+                scheduling.stepStateItem = stateData;
+                scheduling.currentMethod = method;
+                scheduling.waitingTime = retryParams.intervalSeconds() * 1000;
+                throw scheduling;
+            } else {
+                stateData.state = StepState.Failed;
+                stateData.nextRun = Instant.now().plusSeconds(30L);
+                accessor.save(instance.executionId, method, stepKey, stateData);
+                throw e;
+            }
         } finally {
             StepStateHolder.setStepStateData(null);
         }

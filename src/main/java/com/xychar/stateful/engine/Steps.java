@@ -1,5 +1,7 @@
 package com.xychar.stateful.engine;
 
+import com.xychar.stateful.exception.WorkflowException;
+
 import java.lang.reflect.Method;
 import java.time.Instant;
 
@@ -58,23 +60,45 @@ public class Steps {
         stateData.message = message;
     }
 
+    public static String userVarStr() {
+        return currentStep().userVarStr;
+    }
+
+    public static void userVarStr(String strValue) {
+        StepStateItem stateData = currentStep();
+        stateData.userVarStr = strValue;
+    }
+
+    public static Integer userVarInt() {
+        return currentStep().userVarInt;
+    }
+
+    public static void userVarInt(Integer intValue) {
+        StepStateItem stateData = currentStep();
+        stateData.userVarInt = intValue;
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T> T async(T that) {
         WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
         WorkflowHandler handler = (WorkflowHandler) instance.handler;
         return ((WorkflowInstance<T>) handler.async()).getWorkflowInstance();
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T query(T that) {
         WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
         WorkflowHandler handler = (WorkflowHandler) instance.handler;
         return ((WorkflowInstance<T>) handler.query()).getWorkflowInstance();
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> String getExecutionId(T that) {
         WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
         return instance.executionId;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> void sleep(T that, long milliseconds) {
         WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
         System.out.println("*** executionId: " + instance.executionId +

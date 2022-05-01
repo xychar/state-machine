@@ -1,4 +1,4 @@
-package com.xychar.stateful.engine;
+package com.xychar.stateful.exception;
 
 public class StepFailedException extends RuntimeException {
     public StepFailedException(String message) {

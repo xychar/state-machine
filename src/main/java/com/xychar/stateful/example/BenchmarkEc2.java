@@ -1,5 +1,6 @@
 package com.xychar.stateful.example;
 
+import com.xychar.stateful.engine.Retry;
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.StepKey;
 import com.xychar.stateful.engine.StepState;
@@ -27,6 +28,7 @@ public interface BenchmarkEc2 {
     }
 
     @SubStep
+    @Retry(intervalSeconds = 5)
     default void checkEc2(@StepKey String ec2Id) {
         System.out.println("*** Method [checkEc2] executed in BenchmarkEc2");
         System.out.format("Step execution times: %d%n", Steps.getExecutionTimes());

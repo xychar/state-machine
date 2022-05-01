@@ -1,4 +1,6 @@
-package com.xychar.stateful.engine;
+package com.xychar.stateful.scheduler;
+
+import com.xychar.stateful.engine.WorkflowState;
 
 import java.lang.reflect.Method;
 import java.time.Instant;

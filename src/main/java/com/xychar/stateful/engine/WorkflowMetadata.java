@@ -1,5 +1,7 @@
 package com.xychar.stateful.engine;
 
+import com.xychar.stateful.exception.WorkflowException;
+
 import java.lang.reflect.Constructor;
 
 public class WorkflowMetadata<T> {

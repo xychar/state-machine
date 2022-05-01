@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.engine.StepState;
 import com.xychar.stateful.engine.StepStateAccessor;
 import com.xychar.stateful.engine.StepStateItem;
-import com.xychar.stateful.engine.StepStateException;
+import com.xychar.stateful.exception.StepStateException;
 import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
 import org.mybatis.dynamic.sql.insert.GeneralInsertDSL;
@@ -69,6 +69,8 @@ public class StepStateStore implements StepStateAccessor {
                 .set(StepStateTable.endTime).equalToWhenPresent(row.endTime)
                 .set(StepStateTable.parameters).equalToWhenPresent(row.parameters)
                 .set(StepStateTable.returnValue).equalToWhenPresent(row.returnValue)
+                .set(StepStateTable.userVarStr).equalToWhenPresent(row.userVarStr)
+                .set(StepStateTable.userVarInt).equalToWhenPresent(row.userVarInt)
                 .where(StepStateTable.sessionId, SqlBuilder.isEqualTo(row.sessionId))
                 .and(StepStateTable.stepName, SqlBuilder.isEqualTo(row.stepName))
                 .and(StepStateTable.stepKey, SqlBuilder.isEqualTo(row.stepKey));
@@ -86,7 +88,9 @@ public class StepStateStore implements StepStateAccessor {
                     .set(StepStateTable.returnValue).toValueWhenPresent(row.returnValue)
                     .set(StepStateTable.parameters).toValueWhenPresent(row.parameters)
                     .set(StepStateTable.errorType).toValueWhenPresent(row.errorType)
-                    .set(StepStateTable.exception).toValueWhenPresent(row.exception);
+                    .set(StepStateTable.exception).toValueWhenPresent(row.exception)
+                    .set(StepStateTable.userVarStr).toValueWhenPresent(row.userVarStr)
+                    .set(StepStateTable.userVarInt).toValueWhenPresent(row.userVarInt);
 
             extensions.generalInsert(insertStatement);
         }
@@ -145,6 +149,8 @@ public class StepStateStore implements StepStateAccessor {
             }
 
             stepItem.state = StepState.valueOf(row.state);
+            stepItem.userVarStr = row.userVarStr;
+            stepItem.userVarInt = row.userVarInt;
             return stepItem;
         }
 
@@ -184,6 +190,8 @@ public class StepStateStore implements StepStateAccessor {
         row.stepName = stepMethod.getName();
         row.state = stepItem.state.name();
         row.executions = stepItem.executionTimes;
+        row.userVarStr = stepItem.userVarStr;
+        row.userVarInt = stepItem.userVarInt;
         row.startTime = stepItem.startTime.toString();
 
         if (stepItem.endTime != null) {

@@ -12,4 +12,6 @@ public class StepStateRow {
     public String parameters;
     public String returnValue;
     public Integer executions;
+    public String userVarStr;
+    public Integer userVarInt;
 }

@@ -1,6 +1,6 @@
 package com.xychar.stateful.bootstrap;
 
-import com.xychar.stateful.engine.SchedulingException;
+import com.xychar.stateful.exception.SchedulingException;
 import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.engine.WorkflowMetadata;

@@ -1,4 +1,4 @@
-package com.xychar.stateful.engine;
+package com.xychar.stateful.exception;
 
 public class StepStateException extends Throwable {
     public StepStateException(String message) {

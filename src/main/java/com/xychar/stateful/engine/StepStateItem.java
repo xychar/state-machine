@@ -17,4 +17,6 @@ public class StepStateItem {
     public Instant currentRun;
     public Instant nextRun;
     public Method stepMethod;
+    public String userVarStr;
+    public Integer userVarInt;
 }

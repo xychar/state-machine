@@ -48,7 +48,7 @@ public class WorkflowTable extends SqlTable {
     public static final SqlColumn<String> exception = TABLE.column("exception", JDBCType.VARCHAR);
 
     protected WorkflowTable() {
-        super("t_step_state");
+        super("t_workflow");
     }
 
     public static WorkflowRow mappingAllColumns(ResultSet rs, int rowNum) throws SQLException {

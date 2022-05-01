@@ -1,4 +1,4 @@
-package com.xychar.stateful.engine;
+package com.xychar.stateful.exception;
 
 public class WorkflowException extends RuntimeException {
     public WorkflowException(String message) {
