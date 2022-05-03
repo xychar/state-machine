@@ -15,4 +15,7 @@ public @interface Retry {
     double backoffRate() default 1.0;
 
     int timeoutSeconds() default 1800;
+
+    Class<? extends Throwable>[] expected() default {};
+
 }

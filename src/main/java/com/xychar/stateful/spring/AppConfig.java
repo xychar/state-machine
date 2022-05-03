@@ -1,6 +1,6 @@
 package com.xychar.stateful.spring;
 
-import com.xychar.stateful.scheduler.WorkflowScheduler;
+import com.xychar.stateful.scheduler.WorkflowDriver;
 import com.xychar.stateful.store.StepStateStore;
 import com.xychar.stateful.store.WorkflowStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import javax.sql.DataSource;
         AppConfig.class,
         StepStateStore.class,
         WorkflowStore.class,
-        WorkflowScheduler.class})
+        WorkflowDriver.class})
 @PropertySource("classpath:database.properties")
 public class AppConfig {
     @Autowired

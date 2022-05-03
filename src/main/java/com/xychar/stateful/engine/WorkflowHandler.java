@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.concurrent.Callable;
 
-public class WorkflowHandler implements StepHandler {
+public class WorkflowHandler implements StepHandler, OutputHandler {
     private final WorkflowMetadata<?> metadata;
     private final WorkflowInstance<?> instance;
     private final StepStateAccessor accessor;
@@ -72,11 +72,11 @@ public class WorkflowHandler implements StepHandler {
         return queryHandler.instance;
     }
 
-    private boolean isAsyncHandler() {
+    public boolean isAsyncHandler() {
         return parentHandler != null && this == parentHandler.asyncHandler;
     }
 
-    private boolean isQueryHandler() {
+    public boolean isQueryHandler() {
         return parentHandler != null && this == parentHandler.queryHandler;
     }
 
@@ -86,6 +86,10 @@ public class WorkflowHandler implements StepHandler {
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step key", e);
         }
+    }
+
+    private void handleRetrying(StepStateItem stateData, Method method) {
+
     }
 
     public Object invoke(Object self, Callable<?> invocation, Method method,
@@ -180,8 +184,9 @@ public class WorkflowHandler implements StepHandler {
     }
 
     @Override
-    public void sleep(long milliseconds) {
+    public void sleep(long milliseconds) throws Throwable {
         System.out.println("*** sleep: " + milliseconds);
+        Thread.sleep(milliseconds);
     }
 
     @Override
@@ -196,5 +201,12 @@ public class WorkflowHandler implements StepHandler {
         } else {
             return stateData;
         }
+    }
+
+    @Override
+    public Object property(OutputAccessor parent, Method method,
+                           Object... args) throws Throwable {
+        // Output access is not cached
+        return null;
     }
 }

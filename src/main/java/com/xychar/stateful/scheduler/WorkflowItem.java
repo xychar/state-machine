@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 import java.time.Instant;
 
 public class WorkflowItem {
+    public String executionId;
+    public String workerName;
     public String sessionId;
     public String className;
     public String methodName;
@@ -20,4 +22,5 @@ public class WorkflowItem {
     public Object returnValue;
     public Object[] parameters;
     public Throwable exception;
+    public String configData;
 }

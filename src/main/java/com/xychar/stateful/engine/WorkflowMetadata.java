@@ -3,13 +3,14 @@ package com.xychar.stateful.engine;
 import com.xychar.stateful.exception.WorkflowException;
 
 import java.lang.reflect.Constructor;
+import java.util.Map;
 
 public class WorkflowMetadata<T> {
     public Class<?> workflowClass;
 
-    public Class<?> workflowProxyClass;
+    public Constructor<? extends WorkflowInstance> workflowConstructor;
 
-    public Constructor<?> workflowConstructor;
+    public Map<Class<?>, Constructor<? extends OutputAccessor>> outputCreators;
 
     public WorkflowInstance<T> newInstance() {
         try {

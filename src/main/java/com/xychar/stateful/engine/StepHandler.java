@@ -31,7 +31,7 @@ public interface StepHandler {
      * Reserved method name.
      */
     @BindingPriority(100)
-    void sleep(long milliseconds);
+    void sleep(long milliseconds) throws Throwable;
 
     String getExecutionId();
 }

@@ -19,4 +19,5 @@ public class StepStateItem {
     public Method stepMethod;
     public String userVarStr;
     public Integer userVarInt;
+    public String userVarObj;
 }

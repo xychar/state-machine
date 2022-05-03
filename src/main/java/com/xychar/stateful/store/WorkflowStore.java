@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.mybatis.dynamic.sql.SqlBuilder.and;
+
 @Component
 public class WorkflowStore {
     private final JdbcTemplate jdbcTemplate;
@@ -49,55 +51,24 @@ public class WorkflowStore {
         jdbcTemplate.execute(WorkflowTable.CREATE_TABLE);
     }
 
-    public WorkflowRow loadWorkflow(String sessionId, String className, String methodName, String stepKey) {
+    public WorkflowRow loadWorkflow(String sessionId, String executionId, String workerName) {
         NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
 
         Buildable<SelectModel> selectStatement = SelectDSL.select(WorkflowTable.TABLE.allColumns())
                 .from(WorkflowTable.TABLE)
                 .where(WorkflowTable.sessionId, SqlBuilder.isEqualTo(sessionId))
-                .and(WorkflowTable.className, SqlBuilder.isEqualTo(className))
-                .and(WorkflowTable.methodName, SqlBuilder.isEqualTo(methodName))
-                .and(WorkflowTable.stepKey, SqlBuilder.isEqualTo(stepKey));
+                .and(WorkflowTable.executionId, SqlBuilder.isEqualToWhenPresent(executionId))
+                .and(WorkflowTable.workerName, SqlBuilder.isEqualToWhenPresent(workerName));
 
         return extensions.selectOne(selectStatement, WorkflowTable::mappingAllColumns).orElse(null);
-    }
-
-    public List<WorkflowRow> fetchScheduledWorkflows(Long dueTime, long maxRowCount) {
-        NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
-
-        Buildable<SelectModel> selectStatement = SelectDSL.select(WorkflowTable.TABLE.allColumns())
-                .from(WorkflowTable.TABLE)
-                .where(WorkflowTable.nextRun, SqlBuilder.isLessThan(dueTime))
-                .and(WorkflowTable.state, SqlBuilder.isIn(
-                        WorkflowState.Created.name(),
-                        WorkflowState.Executing.name(),
-                        WorkflowState.RollingBack.name()))
-                .orderBy(WorkflowTable.nextRun)
-                .limit(maxRowCount);
-
-        return extensions.selectList(selectStatement, WorkflowTable::mappingAllColumns);
-    }
-
-    public boolean updateWorkflowNextRun(WorkflowRow row, Long currentTime, Long nextRunTime) {
-        NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
-
-        UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(WorkflowTable.TABLE)
-                .set(WorkflowTable.nextRun).equalToWhenPresent(nextRunTime)
-                .set(WorkflowTable.lastRun).equalToWhenPresent(currentTime)
-                .where(WorkflowTable.sessionId, SqlBuilder.isEqualTo(row.sessionId))
-                .and(WorkflowTable.className, SqlBuilder.isEqualTo(row.className))
-                .and(WorkflowTable.methodName, SqlBuilder.isEqualTo(row.methodName))
-                .and(WorkflowTable.stepKey, SqlBuilder.isEqualTo(row.stepKey))
-                .and(WorkflowTable.nextRun, SqlBuilder.isEqualTo(row.nextRun));
-
-        int affectedRows = extensions.update(updateStatement);
-        return affectedRows > 0;
     }
 
     public void saveWorkflow(WorkflowRow row) {
         NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
 
         UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(WorkflowTable.TABLE)
+                .set(WorkflowTable.workerName).equalToWhenPresent(row.workerName)
+                .set(WorkflowTable.sessionId).equalToWhenPresent(row.sessionId)
                 .set(WorkflowTable.state).equalToWhenPresent(row.state)
                 .set(WorkflowTable.startTime).equalToWhenPresent(row.startTime)
                 .set(WorkflowTable.endTime).equalToWhenPresent(row.endTime)
@@ -108,14 +79,14 @@ public class WorkflowStore {
                 .set(WorkflowTable.parameters).equalToWhenPresent(row.parameters)
                 .set(WorkflowTable.errorType).equalToWhenPresent(row.errorType)
                 .set(WorkflowTable.exception).equalToWhenPresent(row.exception)
-                .where(WorkflowTable.sessionId, SqlBuilder.isEqualTo(row.sessionId))
-                .and(WorkflowTable.className, SqlBuilder.isEqualTo(row.className))
-                .and(WorkflowTable.methodName, SqlBuilder.isEqualTo(row.methodName))
-                .and(WorkflowTable.stepKey, SqlBuilder.isEqualTo(row.stepKey));
+                .set(WorkflowTable.configData).equalToWhenPresent(row.configData)
+                .where(WorkflowTable.executionId, SqlBuilder.isEqualTo(row.executionId));
 
         int affectedRows = extensions.update(updateStatement);
         if (affectedRows == 0) {
             Buildable<GeneralInsertModel> insertStatement = GeneralInsertDSL.insertInto(WorkflowTable.TABLE)
+                    .set(WorkflowTable.executionId).toValue(row.executionId)
+                    .set(WorkflowTable.workerName).toValue(row.workerName)
                     .set(WorkflowTable.sessionId).toValue(row.sessionId)
                     .set(WorkflowTable.className).toValue(row.className)
                     .set(WorkflowTable.methodName).toValue(row.methodName)
@@ -128,27 +99,19 @@ public class WorkflowStore {
                     .set(WorkflowTable.executions).toValueWhenPresent(row.executions)
                     .set(WorkflowTable.returnValue).toValueWhenPresent(row.returnValue)
                     .set(WorkflowTable.errorType).toValueWhenPresent(row.errorType)
-                    .set(WorkflowTable.exception).toValueWhenPresent(row.exception);
+                    .set(WorkflowTable.exception).toValueWhenPresent(row.exception)
+                    .set(WorkflowTable.configData).toValueWhenPresent(row.configData);
 
             extensions.generalInsert(insertStatement);
         }
     }
 
-    public Method getWorkflowMethod(String className, String methodName) throws Throwable {
-        ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
-        Class<?> workflowClazz = Class.forName(className, true, threadClassLoader);
-
-        return workflowClazz.getMethod(methodName);
-    }
-
-    public WorkflowItem transform(WorkflowRow row) throws Throwable {
+    public WorkflowItem transform(WorkflowRow row, Method stepMethod) throws Throwable {
         if (row != null) {
             WorkflowItem workflow = new WorkflowItem();
             workflow.executionTimes = row.executions != null ? row.executions : 0;
             workflow.returnValue = null;
             workflow.exception = null;
-
-            Method stepMethod = getWorkflowMethod(row.className, row.methodName);
 
             if (StringUtils.isNotBlank(row.startTime)) {
                 workflow.startTime = Instant.parse(row.startTime);
@@ -158,7 +121,7 @@ public class WorkflowStore {
                 workflow.endTime = Instant.parse(row.endTime);
             }
 
-            if (StringUtils.isNotBlank(row.returnValue)) {
+            if (stepMethod != null && StringUtils.isNotBlank(row.returnValue)) {
                 try {
                     workflow.returnValue = mapper.readValue(row.returnValue, stepMethod.getReturnType());
                 } catch (JsonProcessingException e) {
@@ -166,7 +129,7 @@ public class WorkflowStore {
                 }
             }
 
-            if (StringUtils.isNotBlank(row.parameters)) {
+            if (stepMethod != null && StringUtils.isNotBlank(row.parameters)) {
                 try {
                     JsonNode jsonTree = mapper.readTree(row.parameters);
                     Class<?>[] paramTypes = stepMethod.getParameterTypes();
@@ -201,11 +164,9 @@ public class WorkflowStore {
         return null;
     }
 
-    public WorkflowItem load(String sessionId, Method stepMethod, String stepKey) throws Throwable {
-        String methodName = stepMethod.getName();
-        String className = stepMethod.getDeclaringClass().getName();
-        WorkflowRow row = loadWorkflow(sessionId, className, methodName, stepKey);
-        return transform(row);
+    public WorkflowItem load(String sessionId, String workerName, Method stepMethod) throws Throwable {
+        WorkflowRow row = loadWorkflow(sessionId, null, workerName);
+        return transform(row, stepMethod);
     }
 
     public WorkflowRow transform(WorkflowItem workflow) throws Throwable {
@@ -258,49 +219,7 @@ public class WorkflowStore {
         return null;
     }
 
-    public void save(String sessionId, Method stepMethod, String stepKey, WorkflowItem workflow) throws Throwable {
-        WorkflowRow row = new WorkflowRow();
-        row.sessionId = sessionId;
-        row.className = stepMethod.getDeclaringClass().getName();
-        row.methodName = stepMethod.getName();
-        row.stepKey = stepKey;
-
-        try {
-            row.returnValue = mapper.writeValueAsString(workflow.returnValue);
-            System.out.println("ret: " + row.returnValue);
-        } catch (JsonProcessingException e) {
-            throw new StepStateException("Failed to encode workflow result", e);
-        }
-
-        try {
-            row.parameters = mapper.writeValueAsString(workflow.parameters);
-            System.out.println("args: " + row.parameters);
-        } catch (JsonProcessingException e) {
-            throw new StepStateException("Failed to encode workflow parameters", e);
-        }
-
-        try {
-            if (workflow.exception != null) {
-                row.errorType = workflow.exception.getClass().getName();
-                row.exception = errorMapper.writeValueAsString(workflow.exception);
-                System.out.println("err: " + row.exception);
-            }
-        } catch (JsonProcessingException e) {
-            throw new StepStateException("Failed to encode workflow error", e);
-        }
-
-        row.className = stepMethod.getDeclaringClass().getName();
-        row.methodName = stepMethod.getName();
-        row.state = workflow.state.name();
-        row.executions = workflow.executionTimes;
-        row.startTime = workflow.startTime.toString();
-        row.lastRun = workflow.lastRun.toEpochMilli();
-        row.nextRun = workflow.nextRun.toEpochMilli();
-
-        if (workflow.endTime != null) {
-            row.endTime = workflow.endTime.toString();
-        }
-
-        saveWorkflow(row);
+    public void save(WorkflowItem workflow) throws Throwable {
+        saveWorkflow(transform(workflow));
     }
 }

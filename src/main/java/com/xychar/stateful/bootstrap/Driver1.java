@@ -1,17 +1,12 @@
 package com.xychar.stateful.bootstrap;
 
 import com.xychar.stateful.example.BenchmarkEc2;
-import com.xychar.stateful.example.BenchmarkRun;
-import com.xychar.stateful.example.WorkflowChild1;
-import com.xychar.stateful.scheduler.WorkflowScheduler;
+import com.xychar.stateful.scheduler.WorkflowDriver;
 import com.xychar.stateful.spring.AppConfig;
 import com.xychar.stateful.spring.Exceptions;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.lang.reflect.Method;
-import java.util.UUID;
-
-public class Scheduler1 {
+public class Driver1 {
 
     public static void main(String[] args) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -20,14 +15,13 @@ public class Scheduler1 {
         context.refresh();
         context.start();
 
-        WorkflowScheduler scheduler = context.getBean(WorkflowScheduler.class);
+        WorkflowDriver driver = context.getBean(WorkflowDriver.class);
 
         try {
             // String sessionId = UUID.randomUUID().toString();
-            String sessionId = "f7c0bd63-e262-41d0-aeea-4374550e1f2a";
-            scheduler.createWorkflowIfNotExists(sessionId, BenchmarkEc2.class, "ec2");
-
-            scheduler.run();
+            driver.sessionId = "f7c0bd63-e262-41d0-aeea-4374550e1f2a";
+            driver.workflowClass = BenchmarkEc2.class;
+            driver.execute();
             System.out.println("=== Benchmark finished.");
         } catch (Exception e) {
             e.printStackTrace();
