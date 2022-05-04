@@ -3,11 +3,9 @@ package com.xychar.stateful.store;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xychar.stateful.exception.DuplicatedStepException;
-import com.xychar.stateful.exception.StepNotFoundException;
-import com.xychar.stateful.exception.StepStateException;
-import com.xychar.stateful.scheduler.WorkflowItem;
 import com.xychar.stateful.engine.WorkflowState;
+import com.xychar.stateful.exception.WorkflowException;
+import com.xychar.stateful.scheduler.WorkflowItem;
 import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
 import org.mybatis.dynamic.sql.insert.GeneralInsertDSL;
@@ -25,11 +23,7 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.mybatis.dynamic.sql.SqlBuilder.and;
+import java.util.UUID;
 
 @Component
 public class WorkflowStore {
@@ -49,6 +43,35 @@ public class WorkflowStore {
 
     public void createTableIfNotExists() {
         jdbcTemplate.execute(WorkflowTable.CREATE_TABLE);
+    }
+
+    public WorkflowItem create(Method stepMethod, String params) {
+        WorkflowItem item = new WorkflowItem();
+
+        item.executionId = UUID.randomUUID().toString();
+        item.stepMethod = stepMethod;
+        item.className = stepMethod.getDeclaringClass().getName();
+        item.methodName = stepMethod.getName();
+        item.state = WorkflowState.Created;
+
+        try {
+            JsonNode jsonTree = mapper.createArrayNode();
+            if (StringUtils.isNotBlank(params)) {
+                jsonTree = mapper.readTree(params);
+            }
+
+            Class<?>[] paramTypes = item.stepMethod.getParameterTypes();
+            Object[] parameters = new Object[paramTypes.length];
+            for (int i = 0; i < paramTypes.length; i++) {
+                JsonNode param = jsonTree.get(i);
+                parameters[i] = mapper.treeToValue(param, paramTypes[i]);
+            }
+
+            item.parameters = parameters;
+            return item;
+        } catch (JsonProcessingException e) {
+            throw new WorkflowException("Failed to build workflow step", e);
+        }
     }
 
     public WorkflowRow loadWorkflow(String sessionId, String executionId, String workerName) {
@@ -106,7 +129,7 @@ public class WorkflowStore {
         }
     }
 
-    public WorkflowItem transform(WorkflowRow row, Method stepMethod) throws Throwable {
+    public WorkflowItem transform(WorkflowRow row, Method stepMethod) throws Exception {
         if (row != null) {
             WorkflowItem workflow = new WorkflowItem();
             workflow.executionId = row.executionId;
@@ -126,37 +149,23 @@ public class WorkflowStore {
             }
 
             if (stepMethod != null && StringUtils.isNotBlank(row.returnValue)) {
-                try {
-                    workflow.returnValue = mapper.readValue(row.returnValue, stepMethod.getReturnType());
-                } catch (JsonProcessingException e) {
-                    throw new StepStateException("Failed to decode step result", e);
-                }
+                workflow.returnValue = mapper.readValue(row.returnValue, stepMethod.getReturnType());
             }
 
             if (stepMethod != null && StringUtils.isNotBlank(row.parameters)) {
-                try {
-                    JsonNode jsonTree = mapper.readTree(row.parameters);
-                    Class<?>[] paramTypes = stepMethod.getParameterTypes();
-                    workflow.parameters = new Object[paramTypes.length];
-                    for (int i = 0; i < paramTypes.length; i++) {
-                        JsonNode param = jsonTree.get(i);
-                        workflow.parameters[i] = mapper.treeToValue(param, paramTypes[i]);
-                    }
-                } catch (JsonProcessingException e) {
-                    throw new StepStateException("Failed to decode workflow parameters", e);
+                JsonNode jsonTree = mapper.readTree(row.parameters);
+                Class<?>[] paramTypes = stepMethod.getParameterTypes();
+                workflow.parameters = new Object[paramTypes.length];
+                for (int i = 0; i < paramTypes.length; i++) {
+                    JsonNode param = jsonTree.get(i);
+                    workflow.parameters[i] = mapper.treeToValue(param, paramTypes[i]);
                 }
             }
 
             if (StringUtils.isNotBlank(row.exception) && StringUtils.isNotBlank(row.errorType)) {
-                try {
-                    ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
-                    Class<?> errorType = Class.forName(row.errorType, true, threadClassLoader);
-                    workflow.exception = (Throwable) mapper.readValue(row.exception, errorType);
-                } catch (JsonProcessingException e) {
-                    throw new StepStateException("Failed to decode step error", e);
-                } catch (ClassNotFoundException e) {
-                    throw new StepStateException("Error type not found", e);
-                }
+                ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
+                Class<?> errorType = Class.forName(row.errorType, true, threadClassLoader);
+                workflow.exception = (Throwable) mapper.readValue(row.exception, errorType);
             }
 
             workflow.lastRun = Instant.ofEpochMilli(row.lastRun);
@@ -168,12 +177,12 @@ public class WorkflowStore {
         return null;
     }
 
-    public WorkflowItem load(String sessionId, String workerName, Method stepMethod) throws Throwable {
+    public WorkflowItem load(String sessionId, String workerName, Method stepMethod) throws Exception {
         WorkflowRow row = loadWorkflow(sessionId, null, workerName);
         return transform(row, stepMethod);
     }
 
-    public WorkflowRow transform(WorkflowItem workflow) throws Throwable {
+    public WorkflowRow transform(WorkflowItem workflow) throws Exception {
         if (workflow != null) {
             WorkflowRow row = new WorkflowRow();
             row.executionId = workflow.executionId;
@@ -184,49 +193,46 @@ public class WorkflowStore {
             row.methodName = workflow.stepMethod.getName();
             row.stepKey = workflow.stepKey;
 
-            try {
-                row.returnValue = mapper.writeValueAsString(workflow.returnValue);
-                System.out.println("ret: " + row.returnValue);
-            } catch (JsonProcessingException e) {
-                throw new StepStateException("Failed to encode workflow result", e);
-            }
+            row.returnValue = mapper.writeValueAsString(workflow.returnValue);
+            System.out.println("ret: " + row.returnValue);
 
-            try {
-                row.parameters = mapper.writeValueAsString(workflow.parameters);
-                System.out.println("args: " + row.parameters);
-            } catch (JsonProcessingException e) {
-                throw new StepStateException("Failed to encode workflow parameters", e);
-            }
+            row.parameters = mapper.writeValueAsString(workflow.parameters);
+            System.out.println("args: " + row.parameters);
 
-            try {
-                if (workflow.exception != null) {
-                    row.errorType = workflow.exception.getClass().getName();
-                    row.exception = errorMapper.writeValueAsString(workflow.exception);
-                    System.out.println("err: " + row.exception);
-                }
-            } catch (JsonProcessingException e) {
-                throw new StepStateException("Failed to encode workflow error", e);
+            if (workflow.exception != null) {
+                row.errorType = workflow.exception.getClass().getName();
+                row.exception = errorMapper.writeValueAsString(workflow.exception);
+                System.out.println("err: " + row.exception);
             }
 
             row.className = workflow.stepMethod.getDeclaringClass().getName();
             row.methodName = workflow.stepMethod.getName();
             row.state = workflow.state.name();
             row.executions = workflow.executionTimes;
-            row.startTime = workflow.startTime.toString();
+
+            if (workflow.startTime != null) {
+                row.startTime = workflow.startTime.toString();
+            }
 
             if (workflow.endTime != null) {
                 row.endTime = workflow.endTime.toString();
             }
 
-            row.lastRun = workflow.lastRun.toEpochMilli();
-            row.nextRun = workflow.nextRun.toEpochMilli();
+            if (workflow.lastRun != null) {
+                row.lastRun = workflow.lastRun.toEpochMilli();
+            }
+
+            if (workflow.nextRun != null) {
+                row.nextRun = workflow.nextRun.toEpochMilli();
+            }
+
             return row;
         }
 
         return null;
     }
 
-    public void save(WorkflowItem workflow) throws Throwable {
+    public void save(WorkflowItem workflow) throws Exception {
         saveWorkflow(transform(workflow));
     }
 }

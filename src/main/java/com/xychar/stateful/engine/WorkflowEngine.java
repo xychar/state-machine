@@ -32,8 +32,6 @@ public class WorkflowEngine implements ServiceContainer {
 
     public ServiceContainer serviceContainer;
 
-//    public final Map<Class<?>, Map<String, Object>> registry = new LinkedHashMap<>();
-
     private final ObjectMapper mapper = new ObjectMapper();
 
     private ByteBuddy newByteBuddy(Class<?> clazz) {
@@ -129,7 +127,6 @@ public class WorkflowEngine implements ServiceContainer {
         }
 
         metadata.outputCreators = outputProxies;
-
         return metadata;
     }
 
@@ -139,98 +136,12 @@ public class WorkflowEngine implements ServiceContainer {
         return instance;
     }
 
-    public WorkflowItem createFrom(String className, String methodName, String params) {
-        WorkflowItem item = new WorkflowItem();
-        item.className = className;
-        item.methodName = methodName;
-
-        try {
-            Object[] parameters = new Object[0];
-            JsonNode jsonTree = mapper.createArrayNode();
-            if (StringUtils.isNotBlank(params)) {
-                jsonTree = mapper.readTree(params);
-                parameters = new Object[jsonTree.size()];
-            }
-
-            ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
-            Class<?> workflowClass = Class.forName(className, true, threadClassLoader);
-
-            for (Method m : workflowClass.getMethods()) {
-                if (m.getName().equals(methodName) && m.getParameterCount() == parameters.length) {
-                    item.stepMethod = m;
-                    break;
-                }
-            }
-
-            if (item.stepMethod == null) {
-                throw new WorkflowException("Failed to locate step method: " + methodName);
-            }
-
-            Class<?>[] paramTypes = item.stepMethod.getParameterTypes();
-            parameters = new Object[paramTypes.length];
-            for (int i = 0; i < paramTypes.length; i++) {
-                JsonNode param = jsonTree.get(i);
-                parameters[i] = mapper.treeToValue(param, paramTypes[i]);
-            }
-
-            item.parameters = parameters;
-            return item;
-        } catch (JsonProcessingException e) {
-            throw new WorkflowException("Failed to build workflow step", e);
-        } catch (ClassNotFoundException e) {
-            throw new WorkflowException("Workflow class not found", e);
-        }
-    }
-
     @Override
-    //@SuppressWarnings("unchecked")
     public <T> T lookupService(Class<T> serviceClazz, String name) {
         if (serviceContainer != null) {
             return serviceContainer.lookupService(serviceClazz, name);
         }
 
-//        Map<String, Object> objs = registry.get(serviceClazz);
-//        if (objs != null) {
-//            if (name != null) {
-//                return (T) objs.get(name);
-//            } else {
-//                return (T) objs.values().stream()
-//                        .findFirst().orElse(null);
-//            }
-//        }
-
         return null;
     }
-
-//    public void registerService(Class<?> serviceClazz, String name, Object instance) {
-//        Map<String, Object> objs = registry.get(serviceClazz);
-//        if (objs == null) {
-//            objs = new LinkedHashMap<>();
-//            registry.put(serviceClazz, objs);
-//        }
-//
-//        objs.putIfAbsent(name != null ? name : "", instance);
-//    }
-//
-//    public void registerService(Class<?> serviceClazz, Object instance) {
-//        registerService(serviceClazz, null, instance);
-//    }
-//
-//    public void unregisterService(Class<?> serviceClazz, String name) {
-//        Map<String, Object> objs = registry.get(serviceClazz);
-//        if (objs != null) {
-//            if (name != null) {
-//                objs.remove(name);
-//                if (objs.isEmpty()) {
-//                    registry.remove(serviceClazz);
-//                }
-//            } else {
-//                registry.remove(serviceClazz);
-//            }
-//        }
-//    }
-//
-//    public void unregisterService(Class<?> serviceClazz) {
-//        unregisterService(serviceClazz, null);
-//    }
 }

@@ -18,11 +18,10 @@ public class Driver1 {
         WorkflowDriver driver = context.getBean(WorkflowDriver.class);
 
         try {
-            // String sessionId = UUID.randomUUID().toString();
             driver.sessionId = "f7c0bd63-e262-41d0-aeea-4374550e1f2a";
             driver.workflowClass = BenchmarkEc2.class;
             driver.execute();
-            System.out.println("=== Benchmark finished.");
+            System.out.println("=== Workflow finished.");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

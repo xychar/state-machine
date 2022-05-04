@@ -7,5 +7,5 @@ import java.lang.annotation.Target;
 
 @java.lang.annotation.Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Main {
+public @interface Startup {
 }

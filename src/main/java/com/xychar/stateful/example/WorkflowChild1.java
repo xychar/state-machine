@@ -1,5 +1,6 @@
 package com.xychar.stateful.example;
 
+import com.xychar.stateful.engine.Startup;
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.StepKey;
 import com.xychar.stateful.engine.Workflow;
@@ -59,7 +60,7 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
 
     void waitFor(long milliseconds);
 
-    @Step
+    @Startup
     default Integer example1() {
         System.out.println("*** Method [example1] executed in WorkflowChild1");
         init();

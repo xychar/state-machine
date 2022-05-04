@@ -1,6 +1,7 @@
 package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Retry;
+import com.xychar.stateful.engine.Startup;
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.StepKey;
 import com.xychar.stateful.engine.StepState;
@@ -47,7 +48,7 @@ public interface BenchmarkEc2 {
         System.out.format("Step execution times: %d%n", Steps.getExecutionTimes());
     }
 
-    @Step
+    @Startup
     default String ec2() {
         System.out.println("*** Method [ec2] executed in BenchmarkEc2");
         System.out.format("Step execution times: %d%n", Steps.getExecutionTimes());

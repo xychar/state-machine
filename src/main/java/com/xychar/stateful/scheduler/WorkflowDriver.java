@@ -1,7 +1,7 @@
 package com.xychar.stateful.scheduler;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.xychar.stateful.engine.Main;
+import com.xychar.stateful.engine.Startup;
 import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.engine.WorkflowMetadata;
@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 @Component
@@ -71,7 +72,7 @@ public class WorkflowDriver {
             }
         } else {
             Optional<Method> found = Arrays.stream(workflowClazz.getDeclaredMethods())
-                    .filter(x -> x.getAnnotation(Main.class) != null)
+                    .filter(x -> x.getAnnotation(Startup.class) != null)
                     .findFirst();
             if (found.isPresent()) {
                 return found.get();
@@ -90,17 +91,28 @@ public class WorkflowDriver {
         WorkflowMetadata<?> metadata = workflowEngine.buildFrom(workflowClass);
 
         Map<String, JsonNode> tasks = configs.mergeConfigs();
-        List<WorkflowThread> threads = new ArrayList<>();
+        List<WorkflowWorker> threads = new ArrayList<>();
         for (Map.Entry<String, JsonNode> task : tasks.entrySet()) {
             WorkflowInstance<?> instance = workflowEngine.newWorkflowInstance(metadata);
             instance.inputObject = task.getValue();
-            WorkflowThread thread = new WorkflowThread(instance, stepMethod);
+
+            WorkflowWorker thread = new WorkflowWorker(instance, stepMethod);
             thread.workerName = task.getKey();
+
+            thread.workflowItem = workflowStore.load(sessionId, thread.workerName, stepMethod);
+            if (thread.workflowItem == null) {
+                thread.workflowItem = workflowStore.create(stepMethod, null);
+                thread.workflowItem.sessionId = sessionId;
+                thread.workflowItem.workerName = thread.workerName;
+                workflowStore.save(thread.workflowItem);
+            }
+
+            instance.setExecutionId(thread.workflowItem.executionId);
             threads.add(thread);
             thread.start();
         }
 
-        for (WorkflowThread thread : threads) {
+        for (WorkflowWorker thread : threads) {
             thread.join();
         }
     }

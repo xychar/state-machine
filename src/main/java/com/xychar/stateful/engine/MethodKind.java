@@ -4,14 +4,12 @@ import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.ParameterDescription;
-import net.bytebuddy.description.method.ParameterList;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.bind.MethodDelegationBinder;
 import net.bytebuddy.implementation.bind.annotation.TargetMethodAnnotationDrivenBinder;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.implementation.bytecode.constant.IntegerConstant;
-import net.bytebuddy.implementation.bytecode.constant.TextConstant;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -57,7 +55,7 @@ public @interface MethodKind {
             AnnotationList annotations = source.getDeclaredAnnotations();
             if (annotations.isAnnotationPresent(Step.class)) {
                 return STEP;
-            } else if (annotations.isAnnotationPresent(Main.class)) {
+            } else if (annotations.isAnnotationPresent(Startup.class)) {
                 return STEP;
             } else if (annotations.isAnnotationPresent(SubStep.class)) {
                 return SUB_STEP;
