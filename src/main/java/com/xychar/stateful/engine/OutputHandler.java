@@ -13,8 +13,8 @@ public interface OutputHandler {
      * Non-default methods for output property access.
      */
     @RuntimeType
-    @BindingPriority(300)
-    Object property(@This OutputProxy parent, @Origin Method method,
-                    @AllArguments Object... args) throws Throwable;
+    @BindingPriority(100)
+    Object interceptProperty(@This OutputProxy parent, @Origin Method method,
+                             @AllArguments Object... args) throws Throwable;
 
 }

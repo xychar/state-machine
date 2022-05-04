@@ -2,9 +2,14 @@ package com.xychar.stateful.engine;
 
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.BindingPriority;
+import net.bytebuddy.implementation.bind.annotation.Default;
+import net.bytebuddy.implementation.bind.annotation.DefaultCall;
+import net.bytebuddy.implementation.bind.annotation.DefaultMethod;
+import net.bytebuddy.implementation.bind.annotation.Empty;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
+import net.bytebuddy.implementation.bind.annotation.SuperMethod;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 import java.lang.reflect.Method;
@@ -13,23 +18,23 @@ import java.util.concurrent.Callable;
 public interface StepHandler {
 
     /**
-     * Non-default methods for service and dependency injections.
-     */
-    @RuntimeType
-    @BindingPriority(500)
-    Object intercept(@This WorkflowInstance<?> instance, @MethodKind int kind,
-                     @Origin Method method, @StepKeyArgs String stepKeyArgs,
-                     @AllArguments Object... args) throws Throwable;
-
-    /**
      * Interface default methods for step definition.
      */
     @RuntimeType
     @BindingPriority(300)
-    Object intercept(@This WorkflowInstance<?> instance, @MethodKind int kind,
-                     @Origin Method method, @StepKeyArgs String stepKeyArgs,
-                     @SuperCall Callable<?> invocation,
-                     @AllArguments Object... args) throws Throwable;
+    Object interceptDefault(@This WorkflowInstance<?> instance, @MethodKind int kind,
+                            @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                            @DefaultMethod Method defaultMethod, @DefaultCall Callable<?> invocation,
+                            @AllArguments Object... args) throws Throwable;
+
+    /**
+     * Non-default methods for service and dependency injections.
+     */
+    @RuntimeType
+    @BindingPriority(500)
+    Object interceptMethod(@This WorkflowInstance<?> instance, @MethodKind int kind,
+                           @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                           @AllArguments Object... args) throws Throwable;
 
     /**
      * Reserved method name.

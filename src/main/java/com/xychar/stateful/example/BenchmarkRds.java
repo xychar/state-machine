@@ -49,7 +49,7 @@ public interface BenchmarkRds {
     }
 
     @Step
-    private void hello() {
+    default void hello() {
         System.out.println("*** Private method [hello] executed in BenchmarkRds");
     }
 

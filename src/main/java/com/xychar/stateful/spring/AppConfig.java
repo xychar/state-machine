@@ -4,9 +4,12 @@ import com.xychar.stateful.scheduler.WorkflowDriver;
 import com.xychar.stateful.store.StepStateStore;
 import com.xychar.stateful.store.WorkflowStore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -52,5 +55,15 @@ public class AppConfig {
     @Bean
     public NamedParameterJdbcTemplate template(DataSource dataSource) {
         return new NamedParameterJdbcTemplate(dataSource);
+    }
+
+    public static AbstractApplicationContext initialize() {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+        context.register(Exceptions.class, AppConfig.class);
+
+        context.refresh();
+        context.start();
+
+        return context;
     }
 }

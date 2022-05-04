@@ -72,6 +72,15 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         return queryHandler.instance;
     }
 
+    public StepState currentStepState() {
+        StepState stateData = StepStateHolder.getStepState();
+        if (stateData == null) {
+            throw new WorkflowException("Step state is only available in step execution");
+        } else {
+            return stateData;
+        }
+    }
+
     public boolean isAsyncHandler() {
         return parentHandler != null && this == parentHandler.asyncHandler;
     }
@@ -86,14 +95,6 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step key", e);
         }
-    }
-
-    @Override
-    public Object intercept(WorkflowInstance<?> instance, int kind,
-                            Method method, String stepKeyArgs,
-                            Object... args) throws Throwable {
-        System.out.println("*** invoking non-default method: " + method.getName());
-        return null;
     }
 
     private void handleRetrying(StepState step, Method method) {
@@ -177,11 +178,19 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
     }
 
     @Override
-    public Object intercept(WorkflowInstance<?> instance, int kind,
-                            Method method, String stepKeyArgs,
-                            Callable<?> invocation,
-                            Object... args) throws Throwable {
+    public Object interceptDefault(WorkflowInstance<?> instance, int kind,
+                                   Method method, String stepKeyArgs,
+                                   Method superMethod, Callable<?> invocation,
+                                   Object... args) throws Throwable {
         return invoke(instance, invocation, method, stepKeyArgs, args);
+    }
+
+    @Override
+    public Object interceptMethod(WorkflowInstance<?> instance, int kind,
+                                  Method method, String stepKeyArgs,
+                                  Object... args) throws Throwable {
+        System.out.println("*** invoking non-default method: " + method.getName());
+        return null;
     }
 
     @Override
@@ -195,18 +204,9 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         return instance.executionId;
     }
 
-    private StepState currentStepStateData() {
-        StepState stateData = StepStateHolder.getStepState();
-        if (stateData == null) {
-            throw new WorkflowException("Step state is only available in step execution");
-        } else {
-            return stateData;
-        }
-    }
-
     @Override
-    public Object property(OutputProxy parent, Method method,
-                           Object... args) throws Throwable {
+    public Object interceptProperty(OutputProxy parent, Method method,
+                                    Object... args) throws Throwable {
         System.out.println("*** handling output property: " + method.getName());
         return null;
     }
