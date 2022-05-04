@@ -12,19 +12,23 @@ import java.util.concurrent.Callable;
 
 public interface StepHandler {
 
-    @RuntimeType
-    @BindingPriority(300)
-    Object intercept(@This WorkflowInstance<?> instance, @SuperCall Callable<?> invocation,
-                     @Origin Method method, @StepKeyArgs String stepKeyArgs,
-                     @AllArguments Object... args) throws Throwable;
-
     /**
      * Non-default methods for service and dependency injections.
      */
     @RuntimeType
     @BindingPriority(500)
-    Object intercept(@This WorkflowInstance<?> instance,
+    Object intercept(@This WorkflowInstance<?> instance, @MethodKind int kind,
                      @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                     @AllArguments Object... args) throws Throwable;
+
+    /**
+     * Interface default methods for step definition.
+     */
+    @RuntimeType
+    @BindingPriority(300)
+    Object intercept(@This WorkflowInstance<?> instance, @MethodKind int kind,
+                     @Origin Method method, @StepKeyArgs String stepKeyArgs,
+                     @SuperCall Callable<?> invocation,
                      @AllArguments Object... args) throws Throwable;
 
     /**

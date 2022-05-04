@@ -8,9 +8,11 @@ import java.util.Map;
 public class WorkflowMetadata<T> {
     public Class<?> workflowClass;
 
+    public Class<? extends WorkflowInstance> workflowProxyClass;
+
     public Constructor<? extends WorkflowInstance> workflowConstructor;
 
-    public Map<Class<?>, Constructor<? extends OutputAccessor>> outputCreators;
+    public Map<Class<?>, Constructor<? extends OutputProxy>> outputCreators;
 
     public WorkflowInstance<T> newInstance() {
         try {

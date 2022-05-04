@@ -9,8 +9,8 @@ import java.time.Instant;
  * Utils to access step states in step executions.¬
  */
 public class Steps {
-    private static StepStateItem currentStep() {
-        StepStateItem stateData = StepStateHolder.getStepStateData();
+    private static StepState currentStep() {
+        StepState stateData = StepStateHolder.getStepState();
         if (stateData == null) {
             throw new WorkflowException("Step state is only available in step execution");
         } else {
@@ -31,7 +31,7 @@ public class Steps {
     }
 
     public static int getMaxAttempts() {
-        return currentStep().maxRetryTimes;
+        return currentStep().maxAttempts;
     }
 
     public static Instant getStepFirstRunTime() {
@@ -43,20 +43,20 @@ public class Steps {
     }
 
     public static void succeed(String message) {
-        StepStateItem stateData = currentStep();
-        stateData.result = StepState.Done;
+        StepState stateData = currentStep();
+        stateData.result = StepStatus.DONE;
         stateData.message = message;
     }
 
     public static void retry(String message) {
-        StepStateItem stateData = currentStep();
-        stateData.result = StepState.Retrying;
+        StepState stateData = currentStep();
+        stateData.result = StepStatus.RETRYING;
         stateData.message = message;
     }
 
     public static void fail(String message) {
-        StepStateItem stateData = currentStep();
-        stateData.result = StepState.Failed;
+        StepState stateData = currentStep();
+        stateData.result = StepStatus.FAILED;
         stateData.message = message;
     }
 
@@ -65,7 +65,7 @@ public class Steps {
     }
 
     public static void userVarStr(String strValue) {
-        StepStateItem stateData = currentStep();
+        StepState stateData = currentStep();
         stateData.userVarStr = strValue;
     }
 
@@ -74,7 +74,7 @@ public class Steps {
     }
 
     public static void userVarInt(Integer intValue) {
-        StepStateItem stateData = currentStep();
+        StepState stateData = currentStep();
         stateData.userVarInt = intValue;
     }
 
@@ -105,12 +105,12 @@ public class Steps {
                 " sleep: " + milliseconds);
     }
 
-    public static StepState getStepStateOfLastCall() {
-        StepStateItem stateData = StepStateHolder.getPreviousStepStateData();
+    public static StepStatus getStepStateOfLastCall() {
+        StepState stateData = StepStateHolder.getPreviousStepState();
         if (stateData != null) {
-            return stateData.state;
+            return stateData.status;
         } else {
-            return StepState.Undefined;
+            return StepStatus.CREATED;
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.xychar.stateful.scheduler;
 
-import com.xychar.stateful.engine.WorkflowState;
+import com.xychar.stateful.engine.WorkflowStatus;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -12,15 +12,13 @@ public class WorkflowItem {
     public String className;
     public String methodName;
     public Method stepMethod;
-    public String stepKey;
-    public WorkflowState state;
-    public Integer executionTimes;
+    public WorkflowStatus status;
+    public Integer executions;
     public Instant startTime;
     public Instant endTime;
-    public Instant nextRun;
     public Instant lastRun;
+    public Instant nextRun;
     public Object returnValue;
-    public Object[] parameters;
     public Throwable exception;
     public String configData;
 }

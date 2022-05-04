@@ -53,9 +53,11 @@ public @interface MethodKind {
 
         private IntegerConstant getMethodKind(MethodDescription source) {
             AnnotationList annotations = source.getDeclaredAnnotations();
-            if (annotations.isAnnotationPresent(Step.class)) {
+            if (annotations.isAnnotationPresent(Startup.class)) {
                 return STEP;
-            } else if (annotations.isAnnotationPresent(Startup.class)) {
+            } else if (annotations.isAnnotationPresent(Rollback.class)) {
+                return STEP;
+            } else if (annotations.isAnnotationPresent(Step.class)) {
                 return STEP;
             } else if (annotations.isAnnotationPresent(SubStep.class)) {
                 return SUB_STEP;

@@ -14,19 +14,20 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 @Component
 public class WorkflowDriver {
     public static final String settingsFile = "settings.json";
     public static final String benchmarkFile = "benchmark.json";
+    private final ConfigLoader configs = new ConfigLoader();
 
     private final StepStateStore stepStateStore;
     private final WorkflowStore workflowStore;
@@ -48,11 +49,14 @@ public class WorkflowDriver {
     }
 
     @PostConstruct
-    public void initialize() {
+    public void initialize() throws IOException {
         stepStateStore.createTableIfNotExists();
         workflowStore.createTableIfNotExists();
 
         workflowEngine.stateAccessor = this.stepStateStore;
+
+        configs.loadRootConfig(new File(settingsFile));
+        configs.loadUserConfig(new File(benchmarkFile));
     }
 
     @PreDestroy
@@ -63,14 +67,19 @@ public class WorkflowDriver {
         }
     }
 
+    /**
+     * Locate the workflow entry method.
+     */
     public Method getStepMethod(Class<?> workflowClazz, String methodName) {
         if (methodName != null && !methodName.isEmpty()) {
             try {
+                // The step method should have no parameters
                 return workflowClazz.getMethod(methodName);
             } catch (NoSuchMethodException e) {
-                throw new StepNotFoundException("Default step not found: " + methodName, e);
+                throw new StepNotFoundException("Step not found: " + methodName, e);
             }
         } else {
+            // Search first startup step in the declared methods of the workflow class
             Optional<Method> found = Arrays.stream(workflowClazz.getDeclaredMethods())
                     .filter(x -> x.getAnnotation(Startup.class) != null)
                     .findFirst();
@@ -83,14 +92,10 @@ public class WorkflowDriver {
     }
 
     public void execute() throws Exception {
-        ConfigLoader configs = new ConfigLoader();
-        configs.loadRootConfig(new File(settingsFile));
-        configs.loadUserConfig(new File(benchmarkFile));
-
         Method stepMethod = getStepMethod(workflowClass, null);
         WorkflowMetadata<?> metadata = workflowEngine.buildFrom(workflowClass);
 
-        Map<String, JsonNode> tasks = configs.mergeConfigs();
+        Map<String, JsonNode> tasks = configs.getMergedConfigs();
         List<WorkflowWorker> threads = new ArrayList<>();
         for (Map.Entry<String, JsonNode> task : tasks.entrySet()) {
             WorkflowInstance<?> instance = workflowEngine.newWorkflowInstance(metadata);
@@ -99,9 +104,9 @@ public class WorkflowDriver {
             WorkflowWorker thread = new WorkflowWorker(instance, stepMethod);
             thread.workerName = task.getKey();
 
-            thread.workflowItem = workflowStore.load(sessionId, thread.workerName, stepMethod);
+            thread.workflowItem = workflowStore.load(sessionId, thread.workerName);
             if (thread.workflowItem == null) {
-                thread.workflowItem = workflowStore.create(stepMethod, null);
+                thread.workflowItem = workflowStore.create(stepMethod);
                 thread.workflowItem.sessionId = sessionId;
                 thread.workflowItem.workerName = thread.workerName;
                 workflowStore.save(thread.workflowItem);

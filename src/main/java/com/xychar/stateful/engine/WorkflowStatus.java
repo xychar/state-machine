@@ -1,28 +1,23 @@
 package com.xychar.stateful.engine;
 
-public enum WorkflowState {
+public enum WorkflowStatus {
     /**
      * The initial state of a workflow.
      */
-    Created,
+    CREATED,
 
     /**
      * The workflow is executing.
      */
-    Executing,
+    EXECUTING,
 
     /**
      * The workflow is finished successfully.
      */
-    Finished,
+    FINISHED,
 
     /**
      * The workflow is rolling back.
      */
-    RollingBack,
-
-    /**
-     * The workflow is rolled back successfully.
-     */
-    RolledBack;
+    ROLLBACK;
 }

@@ -1,10 +1,8 @@
 package com.xychar.stateful.store;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xychar.stateful.engine.WorkflowState;
-import com.xychar.stateful.exception.WorkflowException;
+import com.xychar.stateful.common.Utils;
+import com.xychar.stateful.engine.WorkflowStatus;
 import com.xychar.stateful.scheduler.WorkflowItem;
 import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
@@ -24,6 +22,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.function.Function;
 
 @Component
 public class WorkflowStore {
@@ -43,35 +42,19 @@ public class WorkflowStore {
 
     public void createTableIfNotExists() {
         jdbcTemplate.execute(WorkflowTable.CREATE_TABLE);
+        jdbcTemplate.execute(WorkflowTable.CREATE_INDEX);
     }
 
-    public WorkflowItem create(Method stepMethod, String params) {
+
+    public WorkflowItem create(Method stepMethod) {
         WorkflowItem item = new WorkflowItem();
 
         item.executionId = UUID.randomUUID().toString();
         item.stepMethod = stepMethod;
         item.className = stepMethod.getDeclaringClass().getName();
         item.methodName = stepMethod.getName();
-        item.state = WorkflowState.Created;
-
-        try {
-            JsonNode jsonTree = mapper.createArrayNode();
-            if (StringUtils.isNotBlank(params)) {
-                jsonTree = mapper.readTree(params);
-            }
-
-            Class<?>[] paramTypes = item.stepMethod.getParameterTypes();
-            Object[] parameters = new Object[paramTypes.length];
-            for (int i = 0; i < paramTypes.length; i++) {
-                JsonNode param = jsonTree.get(i);
-                parameters[i] = mapper.treeToValue(param, paramTypes[i]);
-            }
-
-            item.parameters = parameters;
-            return item;
-        } catch (JsonProcessingException e) {
-            throw new WorkflowException("Failed to build workflow step", e);
-        }
+        item.status = WorkflowStatus.CREATED;
+        return item;
     }
 
     public WorkflowRow loadWorkflow(String sessionId, String executionId, String workerName) {
@@ -92,14 +75,13 @@ public class WorkflowStore {
         UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(WorkflowTable.TABLE)
                 .set(WorkflowTable.workerName).equalToWhenPresent(row.workerName)
                 .set(WorkflowTable.sessionId).equalToWhenPresent(row.sessionId)
-                .set(WorkflowTable.state).equalToWhenPresent(row.state)
+                .set(WorkflowTable.status).equalToWhenPresent(row.status)
                 .set(WorkflowTable.startTime).equalToWhenPresent(row.startTime)
                 .set(WorkflowTable.endTime).equalToWhenPresent(row.endTime)
                 .set(WorkflowTable.nextRun).equalToWhenPresent(row.nextRun)
                 .set(WorkflowTable.lastRun).equalToWhenPresent(row.lastRun)
                 .set(WorkflowTable.executions).equalToWhenPresent(row.executions)
                 .set(WorkflowTable.returnValue).equalToWhenPresent(row.returnValue)
-                .set(WorkflowTable.parameters).equalToWhenPresent(row.parameters)
                 .set(WorkflowTable.errorType).equalToWhenPresent(row.errorType)
                 .set(WorkflowTable.exception).equalToWhenPresent(row.exception)
                 .set(WorkflowTable.configData).equalToWhenPresent(row.configData)
@@ -113,8 +95,7 @@ public class WorkflowStore {
                     .set(WorkflowTable.sessionId).toValue(row.sessionId)
                     .set(WorkflowTable.className).toValue(row.className)
                     .set(WorkflowTable.methodName).toValue(row.methodName)
-                    .set(WorkflowTable.stepKey).toValue(row.stepKey)
-                    .set(WorkflowTable.state).toValue(row.state)
+                    .set(WorkflowTable.status).toValue(row.status)
                     .set(WorkflowTable.startTime).toValueWhenPresent(row.startTime)
                     .set(WorkflowTable.endTime).toValueWhenPresent(row.endTime)
                     .set(WorkflowTable.nextRun).toValueWhenPresent(row.nextRun)
@@ -129,37 +110,47 @@ public class WorkflowStore {
         }
     }
 
-    public WorkflowItem transform(WorkflowRow row, Method stepMethod) throws Exception {
+    public WorkflowItem load(String sessionId, String workerName) throws Exception {
+        WorkflowRow row = loadWorkflow(sessionId, null, workerName);
         if (row != null) {
             WorkflowItem workflow = new WorkflowItem();
             workflow.executionId = row.executionId;
             workflow.workerName = row.workerName;
             workflow.sessionId = row.sessionId;
-            workflow.executionTimes = row.executions != null ? row.executions : 0;
+            workflow.executions = row.executions != null ? row.executions : 0;
             workflow.configData = row.configData;
             workflow.returnValue = null;
             workflow.exception = null;
 
-            if (StringUtils.isNotBlank(row.startTime)) {
-                workflow.startTime = Instant.parse(row.startTime);
-            }
+            workflow.startTime = Utils.callIfNotBlank(row.startTime, Instant::parse);
+            workflow.endTime = Utils.callIfNotBlank(row.endTime, Instant::parse);
 
-            if (StringUtils.isNotBlank(row.endTime)) {
-                workflow.endTime = Instant.parse(row.endTime);
-            }
+            workflow.lastRun = Utils.callIfNotNull(row.lastRun, Instant::ofEpochMilli);
+            workflow.nextRun = Utils.callIfNotNull(row.nextRun, Instant::ofEpochMilli);
+            workflow.status = WorkflowStatus.valueOf(row.status);
+            return workflow;
+        }
+
+        return null;
+    }
+
+    public WorkflowItem loadMore(String sessionId, String workerName, Method stepMethod) throws Exception {
+        WorkflowRow row = loadWorkflow(sessionId, null, workerName);
+        if (row != null) {
+            WorkflowItem workflow = new WorkflowItem();
+            workflow.executionId = row.executionId;
+            workflow.workerName = row.workerName;
+            workflow.sessionId = row.sessionId;
+            workflow.executions = row.executions != null ? row.executions : 0;
+            workflow.configData = row.configData;
+            workflow.returnValue = null;
+            workflow.exception = null;
+
+            workflow.startTime = Utils.callIfNotBlank(row.startTime, Instant::parse);
+            workflow.endTime = Utils.callIfNotBlank(row.endTime, Instant::parse);
 
             if (stepMethod != null && StringUtils.isNotBlank(row.returnValue)) {
                 workflow.returnValue = mapper.readValue(row.returnValue, stepMethod.getReturnType());
-            }
-
-            if (stepMethod != null && StringUtils.isNotBlank(row.parameters)) {
-                JsonNode jsonTree = mapper.readTree(row.parameters);
-                Class<?>[] paramTypes = stepMethod.getParameterTypes();
-                workflow.parameters = new Object[paramTypes.length];
-                for (int i = 0; i < paramTypes.length; i++) {
-                    JsonNode param = jsonTree.get(i);
-                    workflow.parameters[i] = mapper.treeToValue(param, paramTypes[i]);
-                }
             }
 
             if (StringUtils.isNotBlank(row.exception) && StringUtils.isNotBlank(row.errorType)) {
@@ -168,21 +159,16 @@ public class WorkflowStore {
                 workflow.exception = (Throwable) mapper.readValue(row.exception, errorType);
             }
 
-            workflow.lastRun = Instant.ofEpochMilli(row.lastRun);
-            workflow.nextRun = Instant.ofEpochMilli(row.nextRun);
-            workflow.state = WorkflowState.valueOf(row.state);
+            workflow.lastRun = Utils.callIfNotNull(row.lastRun, Instant::ofEpochMilli);
+            workflow.nextRun = Utils.callIfNotNull(row.nextRun, Instant::ofEpochMilli);
+            workflow.status = WorkflowStatus.valueOf(row.status);
             return workflow;
         }
 
         return null;
     }
 
-    public WorkflowItem load(String sessionId, String workerName, Method stepMethod) throws Exception {
-        WorkflowRow row = loadWorkflow(sessionId, null, workerName);
-        return transform(row, stepMethod);
-    }
-
-    public WorkflowRow transform(WorkflowItem workflow) throws Exception {
+    public void save(WorkflowItem workflow) throws Exception {
         if (workflow != null) {
             WorkflowRow row = new WorkflowRow();
             row.executionId = workflow.executionId;
@@ -191,13 +177,9 @@ public class WorkflowStore {
             row.configData = workflow.configData;
             row.className = workflow.stepMethod.getDeclaringClass().getName();
             row.methodName = workflow.stepMethod.getName();
-            row.stepKey = workflow.stepKey;
 
             row.returnValue = mapper.writeValueAsString(workflow.returnValue);
             System.out.println("ret: " + row.returnValue);
-
-            row.parameters = mapper.writeValueAsString(workflow.parameters);
-            System.out.println("args: " + row.parameters);
 
             if (workflow.exception != null) {
                 row.errorType = workflow.exception.getClass().getName();
@@ -207,32 +189,15 @@ public class WorkflowStore {
 
             row.className = workflow.stepMethod.getDeclaringClass().getName();
             row.methodName = workflow.stepMethod.getName();
-            row.state = workflow.state.name();
-            row.executions = workflow.executionTimes;
+            row.status = workflow.status.name();
+            row.executions = workflow.executions;
 
-            if (workflow.startTime != null) {
-                row.startTime = workflow.startTime.toString();
-            }
+            row.startTime = Utils.callIfNotNull(workflow.startTime, Instant::toString);
+            row.endTime = Utils.callIfNotNull(workflow.endTime, Instant::toString);
+            row.lastRun = Utils.callIfNotNull(workflow.lastRun, Instant::toEpochMilli);
+            row.nextRun = Utils.callIfNotNull(workflow.nextRun, Instant::toEpochMilli);
 
-            if (workflow.endTime != null) {
-                row.endTime = workflow.endTime.toString();
-            }
-
-            if (workflow.lastRun != null) {
-                row.lastRun = workflow.lastRun.toEpochMilli();
-            }
-
-            if (workflow.nextRun != null) {
-                row.nextRun = workflow.nextRun.toEpochMilli();
-            }
-
-            return row;
+            saveWorkflow(row);
         }
-
-        return null;
-    }
-
-    public void save(WorkflowItem workflow) throws Exception {
-        saveWorkflow(transform(workflow));
     }
 }

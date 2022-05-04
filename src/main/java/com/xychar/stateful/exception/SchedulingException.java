@@ -1,13 +1,13 @@
 package com.xychar.stateful.exception;
 
-import com.xychar.stateful.engine.StepStateItem;
+import com.xychar.stateful.engine.StepState;
 
 import java.lang.reflect.Method;
 
 public class SchedulingException extends Throwable {
     public Method currentMethod;
 
-    public StepStateItem stepStateItem;
+    public StepState stepState;
 
     public long waitingTime;
 

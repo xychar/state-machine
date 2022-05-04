@@ -88,7 +88,15 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         }
     }
 
-    private void handleRetrying(StepStateItem stateData, Method method) {
+    @Override
+    public Object intercept(WorkflowInstance<?> instance, int kind,
+                            Method method, String stepKeyArgs,
+                            Object... args) throws Throwable {
+        System.out.println("*** invoking non-default method: " + method.getName());
+        return null;
+    }
+
+    private void handleRetrying(StepState step, Method method) {
 
     }
 
@@ -97,90 +105,83 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         System.out.println("*** invoking method: " + method.getName());
 
         String stepKey = encodeStepKey(StepKeyHelper.getStepKeys(stepKeyArgs, args));
-        StepStateItem stateData = accessor.load(instance.executionId, method, stepKey);
-        if (stateData == null) {
-            stateData = new StepStateItem();
-            stateData.startTime = Instant.now();
-            stateData.currentRun = Instant.now();
+        StepState step = accessor.load(instance.executionId, method, stepKey);
+        if (step == null) {
+            step = new StepState();
+            step.startTime = Instant.now();
+            step.currentRun = Instant.now();
         }
 
-        stateData.stepMethod = method;
+        step.stepMethod = method;
         if (isQueryHandler()) {
-            StepStateHolder.setPreviousStepStateData(stateData);
+            StepStateHolder.setPreviousStepState(step);
             return null;
         }
 
-        if (stateData.state != null) {
+        if (step.status != null) {
             System.out.format("found method-call: %s%s%n", method.getName(), stepKey);
-            if (StepState.Done.equals(stateData.state)) {
-                return stateData.returnValue;
-            } else if (StepState.Failed.equals(stateData.state)) {
-                throw new StepFailedException("Step already failed", stateData.exception);
+            if (StepStatus.DONE.equals(step.status)) {
+                return step.returnValue;
+            } else if (StepStatus.FAILED.equals(step.status)) {
+                throw new StepFailedException("Step already failed", step.exception);
             }
 
-            stateData.currentRun = Instant.now();
+            step.currentRun = Instant.now();
         }
 
-        StepStateHolder.setStepStateData(stateData);
+        StepStateHolder.setStepState(step);
 
         try {
             Object result = invocation.call();
-            stateData.state = StepState.Done;
+            step.status = StepStatus.DONE;
 
-            stateData.executionTimes++;
-            stateData.endTime = Instant.now();
+            step.executionTimes++;
+            step.endTime = Instant.now();
 
-            stateData.exception = null;
-            stateData.returnValue = result;
-            stateData.parameters = args;
+            step.exception = null;
+            step.returnValue = result;
+            step.parameters = args;
 
-            if (stateData.result != null) {
-                stateData.state = stateData.result;
+            if (step.result != null) {
+                step.status = step.result;
             }
 
-            accessor.save(instance.executionId, method, stepKey, stateData);
+            accessor.save(instance.executionId, method, stepKey, step);
             return result;
         } catch (Exception e) {
-            stateData.executionTimes++;
-            stateData.exception = e;
-            stateData.returnValue = null;
-            stateData.parameters = args;
+            step.executionTimes++;
+            step.exception = e;
+            step.returnValue = null;
+            step.parameters = args;
 
             Retry retryParams = method.getAnnotation(Retry.class);
             if (retryParams != null) {
-                stateData.state = StepState.Retrying;
-                stateData.nextRun = Instant.now().plusSeconds(30L);
-                accessor.save(instance.executionId, method, stepKey, stateData);
+                step.status = StepStatus.RETRYING;
+                step.nextRun = Instant.now().plusSeconds(30L);
+                accessor.save(instance.executionId, method, stepKey, step);
 
                 SchedulingException scheduling = new SchedulingException();
-                scheduling.stepStateItem = stateData;
+                scheduling.stepState = step;
                 scheduling.currentMethod = method;
                 scheduling.waitingTime = retryParams.intervalSeconds() * 1000;
                 throw scheduling;
             } else {
-                stateData.state = StepState.Failed;
-                stateData.nextRun = Instant.now().plusSeconds(30L);
-                accessor.save(instance.executionId, method, stepKey, stateData);
+                step.status = StepStatus.FAILED;
+                step.nextRun = Instant.now().plusSeconds(30L);
+                accessor.save(instance.executionId, method, stepKey, step);
                 throw e;
             }
         } finally {
-            StepStateHolder.setStepStateData(null);
+            StepStateHolder.setStepState(null);
         }
     }
 
     @Override
-    public Object intercept(WorkflowInstance<?> instance, Callable<?> invocation,
+    public Object intercept(WorkflowInstance<?> instance, int kind,
                             Method method, String stepKeyArgs,
+                            Callable<?> invocation,
                             Object... args) throws Throwable {
         return invoke(instance, invocation, method, stepKeyArgs, args);
-    }
-
-    @Override
-    public Object intercept(WorkflowInstance<?> instance,
-                            Method method, String stepKeyArgs,
-                            Object... args) throws Throwable {
-        System.out.println("*** invoking non-default method: " + method.getName());
-        return null;
     }
 
     @Override
@@ -194,8 +195,8 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         return instance.executionId;
     }
 
-    private StepStateItem currentStepStateData() {
-        StepStateItem stateData = StepStateHolder.getStepStateData();
+    private StepState currentStepStateData() {
+        StepState stateData = StepStateHolder.getStepState();
         if (stateData == null) {
             throw new WorkflowException("Step state is only available in step execution");
         } else {
@@ -204,9 +205,9 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
     }
 
     @Override
-    public Object property(OutputAccessor parent, Method method,
+    public Object property(OutputProxy parent, Method method,
                            Object... args) throws Throwable {
-        // Output access is not cached
+        System.out.println("*** handling output property: " + method.getName());
         return null;
     }
 }

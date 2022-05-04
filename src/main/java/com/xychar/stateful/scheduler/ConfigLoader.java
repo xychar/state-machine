@@ -11,19 +11,26 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Three-layer execution configurations.
+ */
 @Component
 public class ConfigLoader {
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private JsonNode rootConfig;
-    private JsonNode userConfig;
+    private JsonNode rootConfig = mapper.createObjectNode();
+    private JsonNode userConfig = mapper.createObjectNode();
+
+    private Map<String, JsonNode> mergedConfigs = null;
 
     public void loadRootConfig(File rootConfigFile) throws IOException {
         rootConfig = mapper.readTree(rootConfigFile);
+        mergedConfigs = null;
     }
 
     public void loadUserConfig(File userConfigFile) throws IOException {
         userConfig = mapper.readTree(userConfigFile);
+        mergedConfigs = null;
     }
 
     public static JsonNode deepMerge(JsonNode mainNode, JsonNode updateNode) {
@@ -45,13 +52,13 @@ public class ConfigLoader {
         return mainNode;
     }
 
-    public Map<String, JsonNode> mergeConfigs() {
-        JsonNode settingsNode = userConfig.get("settings");
-        JsonNode workersNode = userConfig.get("workers");
+    public static Map<String, JsonNode> mergeConfigs(JsonNode root, JsonNode user) {
+        JsonNode settingsNode = user.get("settings");
+        JsonNode workersNode = user.get("workers");
 
         JsonNode defaultConfig;
-        if (rootConfig != null) {
-            defaultConfig = deepMerge(rootConfig.deepCopy(), settingsNode);
+        if (root != null) {
+            defaultConfig = deepMerge(root.deepCopy(), settingsNode);
         } else {
             defaultConfig = settingsNode;
         }
@@ -69,5 +76,13 @@ public class ConfigLoader {
         }
 
         return workerConfigs;
+    }
+
+    public Map<String, JsonNode> getMergedConfigs() {
+        if (mergedConfigs == null) {
+            mergedConfigs = mergeConfigs(rootConfig, userConfig);
+        }
+
+        return mergedConfigs;
     }
 }

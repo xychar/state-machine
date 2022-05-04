@@ -1,8 +1,6 @@
 package com.xychar.stateful.engine;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import net.minidev.json.JSONObject;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,7 +15,7 @@ public class WorkflowInstance<T> implements WorkflowExecution<T> {
 
     public final Map<Class<?>, Object> inputs = new LinkedHashMap<>();
 
-    public final Map<Class<?>, OutputAccessor> outputs = new LinkedHashMap<>();
+    public final Map<Class<?>, OutputProxy> outputs = new LinkedHashMap<>();
 
     @Override
     public String getExecutionId() {

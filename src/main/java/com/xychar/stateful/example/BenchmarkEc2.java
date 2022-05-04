@@ -2,9 +2,8 @@ package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Retry;
 import com.xychar.stateful.engine.Startup;
-import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.StepKey;
-import com.xychar.stateful.engine.StepState;
+import com.xychar.stateful.engine.StepStatus;
 import com.xychar.stateful.engine.Steps;
 import com.xychar.stateful.engine.SubStep;
 import com.xychar.stateful.engine.Workflow;
@@ -24,8 +23,8 @@ public interface BenchmarkEc2 {
      */
     default boolean isEc2Launched() {
         Steps.query(this).launchEc2();
-        StepState state = Steps.getStepStateOfLastCall();
-        return StepState.Done.equals(state);
+        StepStatus state = Steps.getStepStateOfLastCall();
+        return StepStatus.DONE.equals(state);
     }
 
     @SubStep

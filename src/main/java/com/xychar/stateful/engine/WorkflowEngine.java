@@ -1,10 +1,7 @@
 package com.xychar.stateful.engine;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.exception.WorkflowException;
-import com.xychar.stateful.scheduler.WorkflowItem;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.NamingStrategy;
 import net.bytebuddy.description.ByteCodeElement;
@@ -19,7 +16,6 @@ import net.bytebuddy.implementation.bind.annotation.BindingPriority;
 import net.bytebuddy.implementation.bind.annotation.TargetMethodAnnotationDrivenBinder;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -55,11 +51,11 @@ public class WorkflowEngine implements ServiceContainer {
         );
     }
 
-    public Constructor<? extends OutputAccessor> buildOutputProxy(Class<?> outputClazz) {
+    public Constructor<? extends OutputProxy> buildOutputProxy(Class<?> outputClazz) {
         ClassLoader classLoader = outputClazz.getClassLoader();
 
-        DynamicType.Unloaded<OutputAccessor> dynamicType = newByteBuddy(outputClazz)
-                .subclass(OutputAccessor.class)
+        DynamicType.Unloaded<OutputProxy> dynamicType = newByteBuddy(outputClazz)
+                .subclass(OutputProxy.class)
                 .method(methodFilter(outputClazz))
                 .intercept(MethodDelegation.withEmptyConfiguration()
                         .withBinders(TargetMethodAnnotationDrivenBinder.ParameterBinder.DEFAULTS)
@@ -72,7 +68,7 @@ public class WorkflowEngine implements ServiceContainer {
                         .toField("handler"))
                 .make();
 
-        Class<? extends OutputAccessor> outputProxyClass = dynamicType.load(classLoader).getLoaded();
+        Class<? extends OutputProxy> outputProxyClass = dynamicType.load(classLoader).getLoaded();
 
         try {
             return outputProxyClass.getConstructor();
@@ -95,7 +91,7 @@ public class WorkflowEngine implements ServiceContainer {
                 .method(methodFilter(workflowClazz))
                 .intercept(MethodDelegation.withEmptyConfiguration()
                         .withBinders(TargetMethodAnnotationDrivenBinder.ParameterBinder.DEFAULTS)
-                        .withBinders(StepKeyArgs.Binder.INSTANCE)
+                        .withBinders(StepKeyArgs.Binder.INSTANCE, MethodKind.Binder.INSTANCE)
                         .withResolvers(
                                 MethodNameEqualityResolver.INSTANCE,
                                 ParameterLengthResolver.INSTANCE,
@@ -105,10 +101,10 @@ public class WorkflowEngine implements ServiceContainer {
                         .toField("handler"))
                 .make();
 
-        Class<? extends WorkflowInstance> workflowProxyClass = dynamicType.load(classLoader).getLoaded();
+        metadata.workflowProxyClass = dynamicType.load(classLoader).getLoaded();
 
         try {
-            metadata.workflowConstructor = workflowProxyClass.getConstructor();
+            metadata.workflowConstructor = metadata.workflowProxyClass.getConstructor();
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -116,13 +112,10 @@ public class WorkflowEngine implements ServiceContainer {
         }
 
         // Build output proxy classes
-        Map<Class<?>, Constructor<? extends OutputAccessor>> outputProxies = new LinkedHashMap<>();
+        Map<Class<?>, Constructor<? extends OutputProxy>> outputProxies = new LinkedHashMap<>();
         for (Method m : workflowClazz.getMethods()) {
-            if (m.getDeclaringClass().isInterface()) {
-                if (m.getAnnotation(Output.class) != null) {
-                    Constructor<? extends OutputAccessor> creator = buildOutputProxy(m.getReturnType());
-                    outputProxies.put(m.getReturnType(), creator);
-                }
+            if (m.getDeclaringClass().isInterface() && m.getAnnotation(Output.class) != null) {
+                outputProxies.put(m.getReturnType(), buildOutputProxy(m.getReturnType()));
             }
         }
 
