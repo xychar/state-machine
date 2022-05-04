@@ -109,7 +109,11 @@ public class WorkflowStore {
     public WorkflowItem transform(WorkflowRow row, Method stepMethod) throws Throwable {
         if (row != null) {
             WorkflowItem workflow = new WorkflowItem();
+            workflow.executionId = row.executionId;
+            workflow.workerName = row.workerName;
+            workflow.sessionId = row.sessionId;
             workflow.executionTimes = row.executions != null ? row.executions : 0;
+            workflow.configData = row.configData;
             workflow.returnValue = null;
             workflow.exception = null;
 
@@ -172,7 +176,10 @@ public class WorkflowStore {
     public WorkflowRow transform(WorkflowItem workflow) throws Throwable {
         if (workflow != null) {
             WorkflowRow row = new WorkflowRow();
+            row.executionId = workflow.executionId;
+            row.workerName = workflow.workerName;
             row.sessionId = workflow.sessionId;
+            row.configData = workflow.configData;
             row.className = workflow.stepMethod.getDeclaringClass().getName();
             row.methodName = workflow.stepMethod.getName();
             row.stepKey = workflow.stepKey;

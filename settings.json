@@ -1,0 +1,14 @@
+{
+    "licenseModel": "license-included",
+    "masterUsername": "master",
+    "masterPassword": "Test#2019",
+    "dbMaterialName": "com.amazonaws.rds.springfield.us-west-2.AdminDBReadWriteAccess",
+    "keyMaterialName": "com.amazonaws.rds.springfield.us-west-2.CustomerDB.AdminPassword.EncryptionKey",
+    "adminDbUrl": "jdbc:oracle:thin:@//ra1springfield.cykpg0xfigie.us-west-2.rds.amazonaws.com:8197/ra1sprf",
+    "tpmTurnOffFlush": true,
+    "epmTurnOffFlush": true,
+    "driver": {
+        "instanceType": "m5.4xlarge",
+        "ec2OsType": "Windows"
+    }
+}
