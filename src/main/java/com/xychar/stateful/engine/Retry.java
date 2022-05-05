@@ -10,6 +10,8 @@ import java.lang.annotation.Target;
 public @interface Retry {
     int maxAttempts() default 3;
 
+    int initialDelaySeconds() default 0;
+
     int intervalSeconds() default 30;
 
     double backoffRate() default 1.0;

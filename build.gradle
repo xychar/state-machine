@@ -30,8 +30,11 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'com.jayway.jsonpath:json-path:2.7.0'
 
-    implementation 'org.slf4j:slf4j-simple:1.7.36'
+    implementation 'info.picocli:picocli:4.6.3'
     implementation 'org.xerial:sqlite-jdbc:3.36.0.3'
+    implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.2'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
@@ -39,6 +42,7 @@ dependencies {
 
 compileJava {
     options.compilerArgs << "-Xlint:unchecked"
+    options.compilerArgs << "-Xlint:deprecation"
 }
 
 test {

@@ -34,7 +34,7 @@ public class WorkflowEngine implements ServiceContainer {
         return new ByteBuddy().with(
                 new NamingStrategy.SuffixingRandom(
                         "Stateful",
-                        new NamingStrategy.SuffixingRandom.BaseNameResolver.ForGivenType(
+                        new NamingStrategy.Suffixing.BaseNameResolver.ForGivenType(
                                 new TypeDescription.ForLoadedType(clazz)
                         )
                 )

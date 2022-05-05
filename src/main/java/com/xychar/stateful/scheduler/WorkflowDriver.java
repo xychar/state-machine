@@ -1,6 +1,7 @@
 package com.xychar.stateful.scheduler;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.xychar.stateful.engine.ServiceContainer;
 import com.xychar.stateful.engine.Startup;
 import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowInstance;
@@ -8,7 +9,11 @@ import com.xychar.stateful.engine.WorkflowMetadata;
 import com.xychar.stateful.exception.StepNotFoundException;
 import com.xychar.stateful.store.StepStateStore;
 import com.xychar.stateful.store.WorkflowStore;
+import org.slf4j.MDC;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -17,17 +22,17 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 @Component
-public class WorkflowDriver {
+public class WorkflowDriver implements ApplicationContextAware, ServiceContainer {
     public static final String settingsFile = "settings.json";
     public static final String benchmarkFile = "benchmark.json";
     private final ConfigLoader configs = new ConfigLoader();
+
+    public ApplicationContext applicationContext;
 
     private final StepStateStore stepStateStore;
     private final WorkflowStore workflowStore;
@@ -45,7 +50,20 @@ public class WorkflowDriver {
         this.workflowStore = workflowStore;
 
         this.workflowEngine = new WorkflowEngine();
+    }
 
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    @Override
+    public <T> T lookupService(Class<T> serviceClazz, String name) {
+        if (name != null && !name.isEmpty()) {
+            return applicationContext.getBean(name, serviceClazz);
+        } else {
+            return applicationContext.getBean(serviceClazz);
+        }
     }
 
     @PostConstruct
@@ -54,6 +72,7 @@ public class WorkflowDriver {
         workflowStore.createTableIfNotExists();
 
         workflowEngine.stateAccessor = this.stepStateStore;
+        workflowEngine.serviceContainer = this;
 
         configs.loadRootConfig(new File(settingsFile));
         configs.loadUserConfig(new File(benchmarkFile));
@@ -80,11 +99,10 @@ public class WorkflowDriver {
             }
         } else {
             // Search first startup step in the declared methods of the workflow class
-            Optional<Method> found = Arrays.stream(workflowClazz.getDeclaredMethods())
-                    .filter(x -> x.getAnnotation(Startup.class) != null)
-                    .findFirst();
-            if (found.isPresent()) {
-                return found.get();
+            for (Method m : workflowClazz.getDeclaredMethods()) {
+                if (m.getAnnotation(Startup.class) != null) {
+                    return m;
+                }
             }
         }
 
@@ -99,10 +117,11 @@ public class WorkflowDriver {
         List<WorkflowWorker> threads = new ArrayList<>();
         for (Map.Entry<String, JsonNode> task : tasks.entrySet()) {
             WorkflowInstance<?> instance = workflowEngine.newWorkflowInstance(metadata);
+            instance.workerName = task.getKey();
             instance.inputObject = task.getValue();
 
             WorkflowWorker thread = new WorkflowWorker(instance, stepMethod);
-            thread.workerName = task.getKey();
+            thread.workerName = instance.workerName;
 
             thread.workflowItem = workflowStore.load(sessionId, thread.workerName);
             if (thread.workflowItem == null) {

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Appenders>
+        <Routing name="engine" ignoreExceptions="false">
+            <Routes pattern="${ctx:worker_name}">
+                <Route>
+                    <RollingFile
+                            name="engine-${ctx:worker_name}"
+                            fileName="logs/engine-${ctx:event_type}.log"
+                            filePattern="logs/engine-${ctx:worker_name}-%i.log">
+                        <PatternLayout pattern="%d{ISO8601} [%t] %p %c{3} - %m%n"/>
+                        <Policies>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+            <!-- Created appender TTL -->
+            <IdlePurgePolicy timeToLive="15" timeUnit="minutes"/>
+        </Routing>
+
+        <Routing name="worker" ignoreExceptions="false">
+            <Routes pattern="${ctx:worker_name}">
+                <Route>
+                    <RollingFile
+                            name="worker-${ctx:worker_name}"
+                            fileName="logs/worker-${ctx:worker_name}.log"
+                            filePattern="logs/worker-${ctx:worker_name}-%i.log">
+                        <PatternLayout pattern="%d{ISO8601} [%t] %p %c{3} - %m%n"/>
+                        <Policies>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+            <!-- Created appender TTL -->
+            <IdlePurgePolicy timeToLive="15" timeUnit="minutes"/>
+        </Routing>
+
+        <RollingFile name="application" fileName="logs/application.log"
+                     filePattern="logs/application-%i.log">>
+            <PatternLayout>
+                <Pattern>%d %p %c{1.} [%t] %m %ex%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+        </RollingFile>
+
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="DEBUG">
+            <AppenderRef ref="STDOUT" level="INFO"/>
+            <AppenderRef ref="application" level="DEBUG"/>
+        </Root>
+
+        <Logger name="com.xychar.stateful.engine" level="debug" additivity="false">
+            <AppenderRef ref="engine"/>
+        </Logger>
+
+        <Logger name="com.xychar.stateful.example" level="debug" additivity="false">
+            <AppenderRef ref="worker"/>
+        </Logger>
+    </Loggers>
+</Configuration>

@@ -21,7 +21,7 @@ public interface StepHandler {
      * Interface default methods for step definition.
      */
     @RuntimeType
-    @BindingPriority(300)
+    @BindingPriority(500)
     Object interceptDefault(@This WorkflowInstance<?> instance, @MethodKind int kind,
                             @Origin Method method, @StepKeyArgs String stepKeyArgs,
                             @DefaultMethod Method defaultMethod, @DefaultCall Callable<?> invocation,
@@ -31,7 +31,7 @@ public interface StepHandler {
      * Non-default methods for service and dependency injections.
      */
     @RuntimeType
-    @BindingPriority(500)
+    @BindingPriority(300)
     Object interceptMethod(@This WorkflowInstance<?> instance, @MethodKind int kind,
                            @Origin Method method, @StepKeyArgs String stepKeyArgs,
                            @AllArguments Object... args) throws Throwable;

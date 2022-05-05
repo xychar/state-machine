@@ -9,6 +9,8 @@ public class WorkflowInstance<T> implements WorkflowExecution<T> {
 
     public String executionId;
 
+    public String workerName;
+
     public StepHandler handler;
 
     public JsonNode inputObject = null;
