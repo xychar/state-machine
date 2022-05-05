@@ -1,10 +1,5 @@
 package com.xychar.stateful.store;
 
-import com.xychar.stateful.engine.WorkflowStatus;
-
-import java.lang.reflect.Method;
-import java.time.Instant;
-
 public class WorkflowRow {
     public String executionId;
     public String workerName;

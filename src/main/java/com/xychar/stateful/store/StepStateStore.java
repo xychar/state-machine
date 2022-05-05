@@ -4,9 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.common.Utils;
-import com.xychar.stateful.engine.StepStatus;
-import com.xychar.stateful.engine.StepStateAccessor;
 import com.xychar.stateful.engine.StepState;
+import com.xychar.stateful.engine.StepStateAccessor;
+import com.xychar.stateful.engine.StepStatus;
 import com.xychar.stateful.exception.StepStateException;
 import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
@@ -25,7 +25,6 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
-import java.util.function.Function;
 
 @Component
 public class StepStateStore implements StepStateAccessor {

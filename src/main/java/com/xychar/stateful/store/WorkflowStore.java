@@ -22,7 +22,6 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.UUID;
-import java.util.function.Function;
 
 @Component
 public class WorkflowStore {
@@ -44,7 +43,6 @@ public class WorkflowStore {
         jdbcTemplate.execute(WorkflowTable.CREATE_TABLE);
         jdbcTemplate.execute(WorkflowTable.CREATE_INDEX);
     }
-
 
     public WorkflowItem createFrom(Method stepMethod) {
         WorkflowItem item = new WorkflowItem();

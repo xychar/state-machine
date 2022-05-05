@@ -1,10 +1,5 @@
 package com.xychar.stateful.store;
 
-import com.xychar.stateful.engine.StepStatus;
-
-import java.lang.reflect.Method;
-import java.time.Instant;
-
 public class StepStateRow {
     public String executionId;
     public String stepName;
