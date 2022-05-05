@@ -27,6 +27,7 @@ public class WorkflowWorker extends Thread {
         super("Workflow-" + instance.workerName);
         this.instance = instance;
         this.stepMethod = stepMethod;
+        this.workerName = instance.workerName;
     }
 
     private long handleScheduling(SchedulingException e) {
@@ -42,7 +43,7 @@ public class WorkflowWorker extends Thread {
         while (!isInterrupted()) {
             try {
                 Object result = stepMethod.invoke(instance);
-                System.out.println("Workflow result: " + result);
+                logger.info("Workflow result: " + result);
                 break;
             } catch (InvocationTargetException e) {
                 if (e.getTargetException() instanceof SchedulingException) {
@@ -67,6 +68,15 @@ public class WorkflowWorker extends Thread {
         } catch (Throwable e) {
             lastError = e;
             e.printStackTrace();
+        }
+    }
+
+    public void shutdown(long milliseconds) {
+        try {
+            interrupt();
+            join(milliseconds);
+        } catch (InterruptedException e) {
+            logger.error("Failed to shutdown the worker");
         }
     }
 }

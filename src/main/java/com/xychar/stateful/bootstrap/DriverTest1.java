@@ -3,9 +3,12 @@ package com.xychar.stateful.bootstrap;
 import com.xychar.stateful.example.BenchmarkEc2;
 import com.xychar.stateful.scheduler.WorkflowDriver;
 import com.xychar.stateful.spring.AppConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.AbstractApplicationContext;
 
 public class DriverTest1 {
+    static final Logger logger = LoggerFactory.getLogger(DriverTest1.class);
 
     public static void main(String[] args) {
         AbstractApplicationContext context = AppConfig.initialize();
@@ -13,11 +16,11 @@ public class DriverTest1 {
 
         try {
             driver.sessionId = "f7c0bd63-e262-41d0-aeea-4374550e1f2a";
-            System.out.println("=== Session Id: " + driver.sessionId);
+            logger.info("sessionId: " + driver.sessionId);
             driver.workflowClass = BenchmarkEc2.class;
             driver.execute();
 
-            System.out.println("=== Workflow finished.");
+            logger.info("Workflow finished.");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

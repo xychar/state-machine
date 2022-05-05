@@ -46,7 +46,7 @@ public class WorkflowStore {
     }
 
 
-    public WorkflowItem create(Method stepMethod) {
+    public WorkflowItem createFrom(Method stepMethod) {
         WorkflowItem item = new WorkflowItem();
 
         item.executionId = UUID.randomUUID().toString();
@@ -179,12 +179,10 @@ public class WorkflowStore {
             row.methodName = workflow.stepMethod.getName();
 
             row.returnValue = mapper.writeValueAsString(workflow.returnValue);
-            System.out.println("ret: " + row.returnValue);
 
             if (workflow.exception != null) {
                 row.errorType = workflow.exception.getClass().getName();
                 row.exception = errorMapper.writeValueAsString(workflow.exception);
-                System.out.println("err: " + row.exception);
             }
 
             row.className = workflow.stepMethod.getDeclaringClass().getName();

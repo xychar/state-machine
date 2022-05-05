@@ -213,21 +213,18 @@ public class StepStateStore implements StepStateAccessor {
 
         try {
             row.returnValue = mapper.writeValueAsString(step.returnValue);
-            System.out.println("ret: " + row.returnValue);
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step result", e);
         }
 
         try {
             row.lastResult = mapper.writeValueAsString(step.lastResult);
-            System.out.println("last: " + row.returnValue);
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode last result", e);
         }
 
         try {
             row.parameters = mapper.writeValueAsString(step.parameters);
-            System.out.println("args: " + row.parameters);
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step parameters", e);
         }
@@ -236,7 +233,6 @@ public class StepStateStore implements StepStateAccessor {
             if (step.exception != null) {
                 row.errorType = step.exception.getClass().getName();
                 row.exception = errorMapper.writeValueAsString(step.exception);
-                System.out.println("err: " + row.exception);
             }
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step error", e);

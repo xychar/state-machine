@@ -69,7 +69,7 @@ public class ConfigLoader {
             Map.Entry<String, JsonNode> worker = workers.next();
 
             JsonNode workerConfig = defaultConfig.deepCopy();
-            ((ObjectNode) workerConfig).put("_name", worker.getKey());
+            ((ObjectNode) workerConfig).put("$name", worker.getKey());
 
             deepMerge(defaultConfig, worker.getValue());
             workerConfigs.put(worker.getKey(), workerConfig);

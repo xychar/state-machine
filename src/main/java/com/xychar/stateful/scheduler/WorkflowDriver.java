@@ -6,10 +6,12 @@ import com.xychar.stateful.engine.Startup;
 import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.engine.WorkflowMetadata;
+import com.xychar.stateful.engine.WorkflowStatus;
 import com.xychar.stateful.exception.StepNotFoundException;
 import com.xychar.stateful.store.StepStateStore;
 import com.xychar.stateful.store.WorkflowStore;
-import org.slf4j.MDC;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -21,6 +23,7 @@ import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 
 @Component
 public class WorkflowDriver implements ApplicationContextAware, ServiceContainer {
+    final Logger logger = LoggerFactory.getLogger(WorkflowDriver.class);
+
     public static final String settingsFile = "settings.json";
     public static final String benchmarkFile = "benchmark.json";
     private final ConfigLoader configs = new ConfigLoader();
@@ -42,6 +47,7 @@ public class WorkflowDriver implements ApplicationContextAware, ServiceContainer
     private ExecutorService threadPool = null;
 
     public Class<?> workflowClass = null;
+    public String methodName = null;
     public String sessionId = null;
 
     public WorkflowDriver(@Autowired StepStateStore stepStateStore,
@@ -110,34 +116,67 @@ public class WorkflowDriver implements ApplicationContextAware, ServiceContainer
     }
 
     public void execute() throws Exception {
-        Method stepMethod = getStepMethod(workflowClass, null);
+        Method stepMethod = getStepMethod(workflowClass, methodName);
         WorkflowMetadata<?> metadata = workflowEngine.buildFrom(workflowClass);
 
-        Map<String, JsonNode> tasks = configs.getMergedConfigs();
-        List<WorkflowWorker> threads = new ArrayList<>();
-        for (Map.Entry<String, JsonNode> task : tasks.entrySet()) {
-            WorkflowInstance<?> instance = workflowEngine.newWorkflowInstance(metadata);
-            instance.workerName = task.getKey();
-            instance.inputObject = task.getValue();
+        Map<String, JsonNode> configList = this.configs.getMergedConfigs();
+
+        final List<WorkflowWorker> workers = new ArrayList<>();
+        for (Map.Entry<String, JsonNode> cfg : configList.entrySet()) {
+            WorkflowInstance<?> instance = workflowEngine.newInstance(metadata);
+            instance.inputObject = cfg.getValue();
+            instance.workerName = cfg.getKey();
 
             WorkflowWorker thread = new WorkflowWorker(instance, stepMethod);
             thread.workerName = instance.workerName;
 
             thread.workflowItem = workflowStore.load(sessionId, thread.workerName);
             if (thread.workflowItem == null) {
-                thread.workflowItem = workflowStore.create(stepMethod);
-                thread.workflowItem.sessionId = sessionId;
+                thread.workflowItem = workflowStore.createFrom(stepMethod);
                 thread.workflowItem.workerName = thread.workerName;
+                thread.workflowItem.sessionId = sessionId;
+                thread.workflowItem.status = WorkflowStatus.EXECUTING;
+                thread.workflowItem.startTime = Instant.now();
                 workflowStore.save(thread.workflowItem);
             }
 
             instance.setExecutionId(thread.workflowItem.executionId);
-            threads.add(thread);
+            workers.add(thread);
             thread.start();
         }
 
-        for (WorkflowWorker thread : threads) {
+        Thread jvmHook = new ShutdownHook(workers);
+        Runtime.getRuntime().addShutdownHook(jvmHook);
+
+        // Waiting for all threads to end
+        for (WorkflowWorker thread : workers) {
             thread.join();
+        }
+
+        workers.clear();
+        Runtime.getRuntime().removeShutdownHook(jvmHook);
+    }
+
+    class ShutdownHook extends Thread {
+        private final List<WorkflowWorker> workers;
+
+        public ShutdownHook(List<WorkflowWorker> workers) {
+            this.workers = workers;
+        }
+
+        @Override
+        public void run() {
+            logger.info("Shutting down workflow engine");
+
+            // Waiting for all threads to end
+            for (WorkflowWorker thread : workers) {
+                thread.shutdown(0);
+            }
+
+            // Waiting for all threads to end
+            for (WorkflowWorker thread : workers) {
+                thread.shutdown(15000);
+            }
         }
     }
 }

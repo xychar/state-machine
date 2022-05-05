@@ -13,7 +13,7 @@ import org.springframework.context.support.AbstractApplicationContext;
 
 import java.util.UUID;
 
-public class Example1 {
+public class RunExample1 {
 
     public static void executeExample(AbstractApplicationContext context) {
         StepStateStore store = context.getBean(StepStateStore.class);
@@ -23,7 +23,7 @@ public class Example1 {
         engine.stateAccessor = store;
 
         WorkflowMetadata<WorkflowChild1> metadata = engine.buildFrom(WorkflowChild1.class);
-        WorkflowInstance<WorkflowChild1> session = engine.newWorkflowInstance(metadata);
+        WorkflowInstance<WorkflowChild1> session = engine.newInstance(metadata);
 
         session.setExecutionId(UUID.randomUUID().toString());
         WorkflowChild1 workflow = session.getWorkflowInstance();

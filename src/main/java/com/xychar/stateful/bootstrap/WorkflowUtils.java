@@ -11,7 +11,7 @@ import org.springframework.context.support.AbstractApplicationContext;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class Utils {
+public class WorkflowUtils {
 
     public static void executeDynamic(AbstractApplicationContext context, Class<?> workflowClazz,
                                       String methodName, String sessionId) throws Exception {
@@ -25,7 +25,7 @@ public class Utils {
         engine.stateAccessor = stepStateStore;
 
         WorkflowMetadata<?> metadata = engine.buildFrom(workflowClazz);
-        WorkflowInstance<?> session = engine.newWorkflowInstance(metadata);
+        WorkflowInstance<?> session = engine.newInstance(metadata);
 
         session.setExecutionId(sessionId);
         Object workflow = session.getWorkflowInstance();

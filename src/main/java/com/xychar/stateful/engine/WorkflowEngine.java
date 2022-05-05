@@ -123,7 +123,7 @@ public class WorkflowEngine implements ServiceContainer {
         return metadata;
     }
 
-    public <T> WorkflowInstance<T> newWorkflowInstance(WorkflowMetadata<T> metadata) {
+    public <T> WorkflowInstance<T> newInstance(WorkflowMetadata<T> metadata) {
         WorkflowInstance<T> instance = metadata.newInstance();
         instance.handler = new WorkflowHandler(metadata, instance, stateAccessor);
         return instance;
