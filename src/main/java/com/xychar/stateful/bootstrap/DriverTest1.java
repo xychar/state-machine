@@ -1,6 +1,6 @@
 package com.xychar.stateful.bootstrap;
 
-import com.xychar.stateful.example.StepRetrying1;
+import com.xychar.stateful.example.StepRetrying2;
 import com.xychar.stateful.scheduler.WorkflowDriver;
 import com.xychar.stateful.spring.AppConfig;
 import org.slf4j.Logger;
@@ -17,7 +17,7 @@ public class DriverTest1 {
         try {
             driver.sessionId = "f7c0bd63-e262-41d0-aeea-4374550e1f2a";
             logger.info("sessionId: " + driver.sessionId);
-            driver.workflowClass = StepRetrying1.class;
+            driver.workflowClass = StepRetrying2.class;
             driver.execute();
 
             logger.info("Workflow finished.");

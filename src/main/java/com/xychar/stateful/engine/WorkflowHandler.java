@@ -13,7 +13,6 @@ import com.xychar.stateful.exception.WorkflowException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 public class WorkflowHandler implements StepHandler, OutputHandler {
@@ -247,45 +246,6 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         throw scheduling;
     }
 
-    private void handleRetryingException(StepState step, Method method, RetryState retrying) throws Throwable {
-        Exception stepException = step.exception;
-
-        // Exceeds max attempts
-        if (step.executionTimes + 1 >= retrying.maxAttempts) {
-            saveStep(accessor, step, StepStatus.FAILED);
-            throw stepException;
-        }
-
-        // Retrying on specified exceptions
-        if (retrying.exceptions != null && retrying.exceptions.length > 0) {
-            // If the exception is not listed, then fails without retrying
-            if (!Arrays.stream(retrying.exceptions).anyMatch(x -> x.isInstance(stepException))) {
-                saveStep(accessor, step, StepStatus.FAILED);
-                throw stepException;
-            }
-        }
-
-        Duration totalExecutionTime = Duration.between(step.startTime, Instant.now());
-        if (totalExecutionTime.getSeconds() > retrying.timeoutSeconds) {
-            String message = "Step timeout, timeoutSeconds=" + retrying.timeoutSeconds;
-            saveStep(accessor, step, StepStatus.FAILED);
-            throw new TimeOutException(message, stepException);
-        }
-
-        int waitingTimeSeconds = calculateRetryingInterval(step.executionTimes,
-                retrying.firstInterval, retrying.intervalSeconds, retrying.backoffRate);
-
-        SchedulingException scheduling = new SchedulingException();
-        scheduling.waitingTime = 1000L * waitingTimeSeconds;
-        scheduling.currentMethod = method;
-        scheduling.lastException = stepException;
-        scheduling.stepState = step;
-
-        step.nextRun = Instant.now().plusSeconds(waitingTimeSeconds);
-        saveStep(accessor, step, StepStatus.RETRYING);
-        throw scheduling;
-    }
-
     public Object invoke(Object self, Callable<?> invocation, Method method,
                          String stepKeyArgs, Object[] args) throws Throwable {
         System.out.println("*** invoking method: " + method.getName());
@@ -302,6 +262,7 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         step.handler = this;
         step.stepKey = stepKey;
         step.stepMethod = method;
+        step.message = "";
         step.executionId = instance.executionId;
         if (isQueryHandler()) {
             StepStateHolder.setQueryStepState(step);
@@ -337,6 +298,7 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         } catch (WorkflowException e) {
             throw e;
         } catch (RetryingException e) {
+            step.message = e.getMessage();
             RetryState retrying = getRetryState(step, method, e);
             handleRetrying(step, method, StepStatus.RETRYING, retrying);
             return null;
@@ -344,6 +306,7 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
             step.endTime = Instant.now();
             step.executionTimes++;
             step.exception = e;
+            step.message = e.getMessage();
             step.returnValue = null;
             step.parameters = args;
 
