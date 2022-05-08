@@ -9,10 +9,11 @@ import com.xychar.stateful.engine.Workflow;
 @Workflow
 public interface StepRetrying1 {
     @SubStep
+    @Retry(maxAttempts = 6, intervalSeconds = 5, succeedAfterRetrying = true)
     default String step1() {
         System.out.println("*** Method [step1] executed in StepRetryingTest");
         System.out.format("*** Step execution times: %d%n", Steps.getExecutionTimes());
-        Steps.succeed("Success-1");
+        Steps.retry("Retry-" + Steps.getExecutionTimes());
         return "i-001";
     }
 

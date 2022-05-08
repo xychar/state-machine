@@ -207,7 +207,7 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         }
 
         // Exceeds max attempts
-        if (step.executionTimes + 1 >= retrying.maxAttempts) {
+        if (step.executionTimes >= retrying.maxAttempts) {
             if (retrying.succeedAfterRetrying) {
                 saveStep(accessor, step, StepStatus.DONE);
                 return;
