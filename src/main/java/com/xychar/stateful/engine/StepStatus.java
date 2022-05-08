@@ -34,6 +34,11 @@ public enum StepStatus {
     FAILED,
 
     /**
+     * The step is marked as skipped.
+     */
+    SKIPPED,
+
+    /**
      * The step is finished successfully.
      */
     DONE;

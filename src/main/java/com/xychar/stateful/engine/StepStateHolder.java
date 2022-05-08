@@ -5,7 +5,7 @@ package com.xychar.stateful.engine;
  */
 public class StepStateHolder {
     private static final ThreadLocal<StepState> holder = new ThreadLocal<>();
-    private static final ThreadLocal<StepState> previous = new ThreadLocal<>();
+    private static final ThreadLocal<StepState> query = new ThreadLocal<>();
 
     public static StepState getStepState() {
         return holder.get();
@@ -15,11 +15,11 @@ public class StepStateHolder {
         holder.set(step);
     }
 
-    public static StepState getPreviousStepState() {
-        return previous.get();
+    public static StepState getQueryStepState() {
+        return query.get();
     }
 
-    public static void setPreviousStepState(StepState step) {
-        previous.set(step);
+    public static void setQueryStepState(StepState step) {
+        query.set(step);
     }
 }

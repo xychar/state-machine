@@ -52,6 +52,7 @@ public class WorkflowWorker extends Thread {
                     Thread.sleep(waitingTime);
                 } else {
                     lastError = e.getTargetException();
+                    logger.error("Workflow failed", lastError);
                     break;
                 }
             }

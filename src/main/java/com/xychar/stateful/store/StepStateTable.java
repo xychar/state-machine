@@ -88,7 +88,7 @@ public class StepStateTable extends SqlTable {
         extractor.mapColumnToProperty(stepName.name(), "stepName");
         extractor.mapColumnToProperty(stepKey.name(), "stepKey");
         extractor.mapColumnToProperty(status.name(), "status");
-        extractor.mapColumnToProperty(message.name(), "message");
+        extractor.mapColumnToProperty(message.name(), "message1");
         extractor.mapColumnToProperty(executions.name(), "executions");
         extractor.mapColumnToProperty(startTime.name(), "startTime");
         extractor.mapColumnToProperty(endTime.name(), "endTime");

@@ -10,14 +10,15 @@ import java.lang.annotation.Target;
 public @interface Retry {
     int maxAttempts() default 3;
 
-    int initialDelaySeconds() default 0;
+    int firstInterval() default 0;
 
     int intervalSeconds() default 30;
 
     double backoffRate() default 1.0;
 
-    int timeoutSeconds() default 1800;
+    int timeoutSeconds() default 300;
 
-    Class<? extends Throwable>[] expected() default {};
+    Class<? extends Throwable>[] exceptions() default {};
 
+    boolean succeedAfterRetrying() default false;
 }

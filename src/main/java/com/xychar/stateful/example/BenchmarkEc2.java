@@ -23,8 +23,8 @@ public interface BenchmarkEc2 {
      */
     default boolean isEc2Launched() {
         Steps.query(this).launchEc2();
-        StepStatus state = Steps.getStepStateOfLastCall();
-        return StepStatus.DONE.equals(state);
+        StepStatus status = Steps.getStepStatusOfLastQuery();
+        return StepStatus.DONE.equals(status);
     }
 
     @SubStep
@@ -56,6 +56,9 @@ public interface BenchmarkEc2 {
         checkEc2(ec2Id);
         pingSsm(ec2Id);
         installHdb(ec2Id);
+
+        Steps.check1(BenchmarkEc2::launchEc2);
+        Steps.check1(BenchmarkEc2::pingSsm);
 
         return ec2Id;
     }

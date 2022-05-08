@@ -4,18 +4,20 @@ import com.xychar.stateful.exception.WorkflowException;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Utils to access step states in step executions.¬
  */
 public class Steps {
     private static StepState currentStep() {
-        StepState stateData = StepStateHolder.getStepState();
-        if (stateData == null) {
-            throw new WorkflowException("Step state is only available in step execution");
-        } else {
-            return stateData;
+        StepState step = StepStateHolder.getStepState();
+        if (step != null) {
+            return step;
         }
+
+        throw new WorkflowException("Step state is only available in step execution");
     }
 
     public static Method getStepMethod() {
@@ -30,10 +32,6 @@ public class Steps {
         return currentStep().executionTimes;
     }
 
-    public static int getMaxAttempts() {
-        return currentStep().maxAttempts;
-    }
-
     public static Instant getStepFirstRunTime() {
         return currentStep().startTime;
     }
@@ -43,30 +41,21 @@ public class Steps {
     }
 
     public static void succeed(String message) {
-        StepState stateData = currentStep();
-        stateData.result = StepStatus.DONE;
-        stateData.message = message;
+        StepState step = currentStep();
+        step.action = StepStatus.DONE;
+        step.message = message;
     }
 
     public static void retry(String message) {
-        StepState stateData = currentStep();
-        stateData.result = StepStatus.RETRYING;
-        stateData.message = message;
+        StepState step = currentStep();
+        step.action = StepStatus.RETRYING;
+        step.message = message;
     }
 
     public static void fail(String message) {
-        StepState stateData = currentStep();
-        stateData.result = StepStatus.FAILED;
-        stateData.message = message;
-    }
-
-    public static String userVarStr() {
-        return currentStep().userVarStr;
-    }
-
-    public static void userVarStr(String strValue) {
-        StepState stateData = currentStep();
-        stateData.userVarStr = strValue;
+        StepState step = currentStep();
+        step.action = StepStatus.FAILED;
+        step.message = message;
     }
 
     public static Integer userVarInt() {
@@ -76,6 +65,35 @@ public class Steps {
     public static void userVarInt(Integer intValue) {
         StepState stateData = currentStep();
         stateData.userVarInt = intValue;
+    }
+
+    public static String userVarStr() {
+        return currentStep().userVarStr;
+    }
+
+    public static void userVarStr(String strValue) {
+        StepState step = currentStep();
+        step.userVarStr = strValue;
+    }
+
+    public static <T> T userVarObj(Class<T> dataClass) {
+        StepState step = currentStep();
+        return step.handler.decodeObject(step.userVarObj, dataClass);
+    }
+
+    public static <T> void userVarObj(T userObj) {
+        StepState step = currentStep();
+        step.userVarObj = step.handler.encodeObject(userObj);
+    }
+
+    public static <T> T lastResult(Class<T> dataClass) {
+        StepState step = currentStep();
+        return step.handler.decodeObject(step.lastResult, dataClass);
+    }
+
+    public static <T> void lastResult(T userObj) {
+        StepState step = currentStep();
+        step.lastResult = step.handler.encodeObject(userObj);
     }
 
     @SuppressWarnings("unchecked")
@@ -92,6 +110,26 @@ public class Steps {
         return ((WorkflowInstance<T>) handler.query()).getWorkflowInstance();
     }
 
+    public static <T, R> StepStatus check1(Function<T, R> func) {
+        StepState step = currentStep();
+        @SuppressWarnings("unchecked")
+        T instance = (T) step.handler.query();
+        func.apply(instance);
+
+        StepState last = getStepStateOfLastQuery();
+        return last.status;
+    }
+
+    public static <T, A> StepStatus check1(BiConsumer<T, A> consumer) {
+        StepState step = currentStep();
+        @SuppressWarnings("unchecked")
+        T instance = (T) step.handler.query();
+        consumer.accept(instance, null);
+
+        StepState last = getStepStateOfLastQuery();
+        return last.status;
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> String getExecutionId(T that) {
         WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
@@ -105,10 +143,19 @@ public class Steps {
                 " sleep: " + milliseconds);
     }
 
-    public static StepStatus getStepStateOfLastCall() {
-        StepState stateData = StepStateHolder.getPreviousStepState();
-        if (stateData != null) {
-            return stateData.status;
+    public static StepState getStepStateOfLastQuery() {
+        StepState step = StepStateHolder.getQueryStepState();
+        if (step != null) {
+            return step;
+        }
+
+        throw new WorkflowException("Step state does not exist for query");
+    }
+
+    public static StepStatus getStepStatusOfLastQuery() {
+        StepState step = StepStateHolder.getQueryStepState();
+        if (step != null) {
+            return step.status;
         } else {
             return StepStatus.CREATED;
         }
