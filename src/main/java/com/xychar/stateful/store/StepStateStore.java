@@ -185,7 +185,7 @@ public class StepStateStore implements StepStateAccessor {
                 try {
                     ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
                     Class<?> errorType = Class.forName(row.errorType, true, threadClassLoader);
-                    step.exception = (Throwable) mapper.readValue(row.exception, errorType);
+                    step.exception = (Exception) mapper.readValue(row.exception, errorType);
                 } catch (JsonProcessingException e) {
                     throw new StepStateException("Failed to decode step error", e);
                 } catch (ClassNotFoundException e) {

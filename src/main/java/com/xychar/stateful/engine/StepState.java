@@ -21,7 +21,7 @@ public class StepState {
     public Instant endTime;
     public Object returnValue;
     public Object[] parameters;
-    public Throwable exception;
+    public Exception exception;
 
     public Instant currentRun;
     public Instant nextRun;
