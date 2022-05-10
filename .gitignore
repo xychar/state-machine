@@ -24,6 +24,8 @@ hs_err_pid*
 
 *.db
 
+.DS_Store
+
 .gradle/
 .vscode/
 .idea/
