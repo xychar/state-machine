@@ -3,7 +3,7 @@ package com.xychar.stateful.store;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.common.Utils;
 import com.xychar.stateful.engine.WorkflowStatus;
-import com.xychar.stateful.scheduler.WorkflowItem;
+import com.xychar.stateful.scheduler.WorkflowData;
 import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
 import org.mybatis.dynamic.sql.insert.GeneralInsertDSL;
@@ -44,8 +44,8 @@ public class WorkflowStore {
         jdbcTemplate.execute(WorkflowTable.CREATE_INDEX);
     }
 
-    public WorkflowItem createFrom(Method stepMethod) {
-        WorkflowItem item = new WorkflowItem();
+    public WorkflowData createFrom(Method stepMethod) {
+        WorkflowData item = new WorkflowData();
 
         item.executionId = UUID.randomUUID().toString();
         item.stepMethod = stepMethod;
@@ -108,10 +108,10 @@ public class WorkflowStore {
         }
     }
 
-    public WorkflowItem load(String sessionId, String workerName) throws Exception {
+    public WorkflowData load(String sessionId, String workerName) throws Exception {
         WorkflowRow row = loadWorkflow(sessionId, null, workerName);
         if (row != null) {
-            WorkflowItem workflow = new WorkflowItem();
+            WorkflowData workflow = new WorkflowData();
             workflow.executionId = row.executionId;
             workflow.workerName = row.workerName;
             workflow.sessionId = row.sessionId;
@@ -132,10 +132,10 @@ public class WorkflowStore {
         return null;
     }
 
-    public WorkflowItem loadMore(String sessionId, String workerName, Method stepMethod) throws Exception {
+    public WorkflowData loadMore(String sessionId, String workerName, Method stepMethod) throws Exception {
         WorkflowRow row = loadWorkflow(sessionId, null, workerName);
         if (row != null) {
-            WorkflowItem workflow = new WorkflowItem();
+            WorkflowData workflow = new WorkflowData();
             workflow.executionId = row.executionId;
             workflow.workerName = row.workerName;
             workflow.sessionId = row.sessionId;
@@ -166,7 +166,7 @@ public class WorkflowStore {
         return null;
     }
 
-    public void save(WorkflowItem workflow) throws Exception {
+    public void save(WorkflowData workflow) throws Exception {
         if (workflow != null) {
             WorkflowRow row = new WorkflowRow();
             row.executionId = workflow.executionId;

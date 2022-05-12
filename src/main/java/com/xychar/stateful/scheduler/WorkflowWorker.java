@@ -15,7 +15,7 @@ public class WorkflowWorker extends Thread {
     final Logger logger = LoggerFactory.getLogger(WorkflowWorker.class);
 
     public String workerName;
-    public WorkflowItem workflowItem;
+    public WorkflowData workflowItem;
     public WorkflowStore workflowStore;
 
     public final Method stepMethod;

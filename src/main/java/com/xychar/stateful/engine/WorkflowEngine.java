@@ -1,6 +1,5 @@
 package com.xychar.stateful.engine;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.exception.WorkflowException;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.NamingStrategy;
@@ -28,8 +27,6 @@ public class WorkflowEngine implements ServiceContainer {
 
     public ServiceContainer serviceContainer;
 
-    private final ObjectMapper mapper = new ObjectMapper();
-
     private ByteBuddy newByteBuddy(Class<?> clazz) {
         return new ByteBuddy().with(
                 new NamingStrategy.SuffixingRandom(
@@ -56,6 +53,7 @@ public class WorkflowEngine implements ServiceContainer {
 
         DynamicType.Unloaded<OutputProxy> dynamicType = newByteBuddy(outputClazz)
                 .subclass(OutputProxy.class)
+                .implement(outputClazz)
                 .method(methodFilter(outputClazz))
                 .intercept(MethodDelegation.withEmptyConfiguration()
                         .withBinders(TargetMethodAnnotationDrivenBinder.ParameterBinder.DEFAULTS)

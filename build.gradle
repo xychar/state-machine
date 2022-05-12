@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'java-library'
     id 'application'
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id 'org.springframework.boot' version '2.6.7'
 }
 
 wrapper.enabled(false)
@@ -10,8 +10,9 @@ wrapper.enabled(false)
 group 'com.xy-char'
 version '1.0.1'
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+compileJava {
+    options.release = 8
+}
 
 repositories {
     mavenCentral()
@@ -26,7 +27,6 @@ dependencies {
     implementation 'org.springframework:spring-tx:5.2.8.RELEASE'
 
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.1'
-    implementation 'com.amazonaws:aws-lambda-java-events:3.11.0'
     implementation 'com.amazonaws:aws-lambda-java-log4j2:1.5.1'
     // implementation 'software.amazon.awssdk:aws-sdk-java:2.17.175'
 
@@ -57,28 +57,19 @@ test {
     useJUnitPlatform()
 }
 
+bootJar {
+    mainClassName = 'com.xychar.stateful.bootstrap.DriverTest1'
+}
+
 application {
-    mainClass = "com.xychar.stateful.bootstrap.DriverTest1"
+    mainClass = 'com.xychar.stateful.bootstrap.DriverTest1'
+    // applicationDefaultJvmArgs = ['-Dlog4j.configDebug=true']
 }
 
-shadowJar {
-    exclude "**/Log4j2Plugins.dat"
-    exclude "META-INF/versions/**"
-}
-
-task lambda(type: Zip) {
+task buildZip(type: Zip) {
     from compileJava
     from processResources
     into('lib') {
         from configurations.runtimeClasspath
-    }
-}
-
-jar {
-    manifest {
-        attributes(
-                "Manifest-Version": "1.0",
-                "Multi-Release": true
-        )
     }
 }

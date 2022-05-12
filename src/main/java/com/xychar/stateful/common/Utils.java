@@ -1,7 +1,10 @@
 package com.xychar.stateful.common;
 
+import com.xychar.stateful.engine.Startup;
+import com.xychar.stateful.exception.StepNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 
+import java.lang.reflect.Method;
 import java.util.function.Function;
 
 public class Utils {
@@ -14,4 +17,26 @@ public class Utils {
         return StringUtils.isNotBlank(s) ? func.apply(s) : null;
     }
 
+    /**
+     * Locate the workflow entry method.
+     */
+    public static Method getStepMethod(Class<?> workflowClazz, String methodName) {
+        if (methodName != null && !methodName.isEmpty()) {
+            try {
+                // The step method should have no parameters
+                return workflowClazz.getMethod(methodName);
+            } catch (NoSuchMethodException e) {
+                throw new StepNotFoundException("Step not found: " + methodName, e);
+            }
+        } else {
+            // Search first startup step in the declared methods of the workflow class
+            for (Method m : workflowClazz.getDeclaredMethods()) {
+                if (m.getAnnotation(Startup.class) != null) {
+                    return m;
+                }
+            }
+        }
+
+        throw new StepNotFoundException("Default step not found");
+    }
 }
