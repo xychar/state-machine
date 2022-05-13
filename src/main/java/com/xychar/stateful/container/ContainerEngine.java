@@ -12,13 +12,16 @@ import net.bytebuddy.implementation.bind.DeclaringTypeResolver;
 import net.bytebuddy.implementation.bind.MethodNameEqualityResolver;
 import net.bytebuddy.implementation.bind.ParameterLengthResolver;
 import net.bytebuddy.implementation.bind.annotation.BindingPriority;
-import net.bytebuddy.implementation.bind.annotation.FieldProxy;
 import net.bytebuddy.implementation.bind.annotation.TargetMethodAnnotationDrivenBinder;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class ContainerEngine {
 
@@ -43,16 +46,38 @@ public class ContainerEngine {
         );
     }
 
-    public interface FieldGetter {
-        Object getValue();
+    public Map<String, Integer> getMethodNames(Class<?> clazz) {
+        Map<String, Integer> methods = new LinkedHashMap<>();
+        for (Method m : clazz.getMethods()) {
+            methods.putIfAbsent(m.getName(), methods.size());
+        }
+
+        return methods;
     }
 
-    public interface FieldSetter {
-        void setValue(Object value);
+    public void getAllInterfaces(Set<String> names, Class<?> clazz) {
+        names.add(clazz.getName());
+        for (Class<?> parent : clazz.getInterfaces()) {
+            getAllInterfaces(names, parent);
+        }
     }
 
-    public Constructor<? extends ContainerProxy> buildContainerProxy(Class<?> containerClazz) {
+    public <T> ContainerMetadata<T> buildFrom(Class<T> containerClazz) {
         ClassLoader classLoader = containerClazz.getClassLoader();
+
+        Map<String, Integer> methodNames = MethodIndex.Binder.INSTANCE.getMethodNames(containerClazz);
+        if (methodNames == null) {
+            methodNames = getMethodNames(containerClazz);
+
+            Set<String> interfaceNames = new LinkedHashSet<>();
+            getAllInterfaces(interfaceNames, containerClazz);
+            for (String className : interfaceNames) {
+                MethodIndex.Binder.INSTANCE.addMethodNames(className, methodNames);
+            }
+        }
+
+        ContainerMetadata<T> metadata = new ContainerMetadata<>();
+        metadata.methodNames = methodNames;
 
         DynamicType.Unloaded<ContainerProxy> dynamicType = newByteBuddy(containerClazz)
                 .subclass(ContainerProxy.class)
@@ -62,7 +87,7 @@ public class ContainerEngine {
                 .method(methodFilter(containerClazz))
                 .intercept(MethodDelegation.withEmptyConfiguration()
                         .withBinders(TargetMethodAnnotationDrivenBinder.ParameterBinder.DEFAULTS)
-                        .withBinders(FieldProxy.Binder.install(GetterAndSetter.class))
+                        .withBinders(MethodIndex.Binder.INSTANCE)
                         .withResolvers(
                                 MethodNameEqualityResolver.INSTANCE,
                                 ParameterLengthResolver.INSTANCE,
@@ -72,14 +97,17 @@ public class ContainerEngine {
                         .toField("handler"))
                 .make();
 
-        Class<? extends ContainerProxy> proxyClass = dynamicType.load(classLoader).getLoaded();
+        metadata.containerClass = containerClazz;
+        metadata.containerProxyClass = dynamicType.load(classLoader).getLoaded();
 
         try {
-            return proxyClass.getConstructor();
+            metadata.containerConstructor = metadata.containerProxyClass.getConstructor();
+            return metadata;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new WorkflowException("Failed to locate the default constructor", e);
         }
     }
+
 }
