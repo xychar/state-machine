@@ -3,7 +3,7 @@ package com.xychar.stateful.container;
 import com.xychar.stateful.exception.WorkflowException;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.NamingStrategy;
-import net.bytebuddy.description.ByteCodeElement;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.MethodDelegation;
@@ -39,11 +39,10 @@ public class ContainerEngine {
     /**
      * Only intercept interface methods
      */
-    private ElementMatcher<ByteCodeElement> methodFilter(Class<?> clazz) {
+    private ElementMatcher.Junction<MethodDescription> methodFilter(Class<?> clazz) {
         return ElementMatchers.isDeclaredBy(
                 ElementMatchers.isSuperTypeOf(clazz)
-                        .and(ElementMatchers.isInterface())
-        );
+                        .and(ElementMatchers.isInterface()));
     }
 
     public Map<String, Integer> getMethodNames(Class<?> clazz) {

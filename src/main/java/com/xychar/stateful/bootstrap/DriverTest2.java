@@ -33,9 +33,16 @@ public class DriverTest2 {
         ContainerEngine engine = new ContainerEngine();
 
         try {
+            engine.buildFrom(ContainerTest1.class);
 
+            long t1 = System.currentTimeMillis();
             ContainerMetadata<ContainerTest2> metadata = engine.buildFrom(ContainerTest2.class);
+            long t2 = System.currentTimeMillis();
+            System.out.format("build time: %d%n", t2 - t1);
+            
             ContainerTest2 ct2 = metadata.newInstance();
+            long t3 = System.currentTimeMillis();
+            System.out.format("create time: %d%n", t3 - t2);
 
             System.out.format("Hello1: %s%n", ct2.getHello());
             System.out.format("World1: %s%n", ct2.getWorld());
