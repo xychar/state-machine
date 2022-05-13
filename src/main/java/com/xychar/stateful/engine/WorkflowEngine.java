@@ -21,11 +21,11 @@ import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class WorkflowEngine implements ServiceContainer {
+public class WorkflowEngine implements ServiceLocator {
 
     public StepStateAccessor stateAccessor;
 
-    public ServiceContainer serviceContainer;
+    public ServiceLocator serviceContainer;
 
     private ByteBuddy newByteBuddy(Class<?> clazz) {
         return new ByteBuddy().with(
@@ -128,9 +128,9 @@ public class WorkflowEngine implements ServiceContainer {
     }
 
     @Override
-    public <T> T lookupService(Class<T> serviceClazz, String name) {
+    public <T> T lookup(Class<T> serviceClazz, String name) {
         if (serviceContainer != null) {
-            return serviceContainer.lookupService(serviceClazz, name);
+            return serviceContainer.lookup(serviceClazz, name);
         }
 
         return null;

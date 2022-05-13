@@ -4,8 +4,6 @@ import com.xychar.stateful.exception.WorkflowException;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * Utils to access step states in step executions.¬
@@ -32,6 +30,10 @@ public class Steps {
         return currentStep().executionTimes;
     }
 
+    public static void setExecutionTimes(int times) {
+        currentStep().executionTimes = times;
+    }
+
     public static Instant getStepFirstRunTime() {
         return currentStep().startTime;
     }
@@ -52,9 +54,23 @@ public class Steps {
         step.message = message;
     }
 
+    public static void retry(long nextWaiting, String message) {
+        StepState step = currentStep();
+        step.action = StepStatus.RETRYING;
+        step.message = message;
+        step.retrying = new RetryState();
+        step.retrying.nextWaiting = nextWaiting;
+    }
+
     public static void fail(String message) {
         StepState step = currentStep();
         step.action = StepStatus.FAILED;
+        step.message = message;
+    }
+
+    public static void skip(String message) {
+        StepState step = currentStep();
+        step.action = StepStatus.SKIPPED;
         step.message = message;
     }
 
@@ -108,26 +124,6 @@ public class Steps {
         WorkflowInstance<T> instance = (WorkflowInstance<T>) that;
         WorkflowHandler handler = (WorkflowHandler) instance.handler;
         return ((WorkflowInstance<T>) handler.query()).getWorkflowInstance();
-    }
-
-    public static <T, R> StepStatus check1(Function<T, R> func) {
-        StepState step = currentStep();
-        @SuppressWarnings("unchecked")
-        T instance = (T) step.handler.query();
-        func.apply(instance);
-
-        StepState last = getStepStateOfLastQuery();
-        return last.status;
-    }
-
-    public static <T, A> StepStatus check1(BiConsumer<T, A> consumer) {
-        StepState step = currentStep();
-        @SuppressWarnings("unchecked")
-        T instance = (T) step.handler.query();
-        consumer.accept(instance, null);
-
-        StepState last = getStepStateOfLastQuery();
-        return last.status;
     }
 
     @SuppressWarnings("unchecked")

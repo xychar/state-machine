@@ -2,6 +2,7 @@ package com.xychar.stateful.engine;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xychar.stateful.common.Utils;
 import com.xychar.stateful.exception.RetryingException;
 import com.xychar.stateful.exception.SchedulingException;
 import com.xychar.stateful.exception.StepFailedException;
@@ -119,8 +120,9 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
 
     private RetryState getRetryStateFromException(RetryingException e) {
         RetryState retrying = new RetryState();
-        retrying.maxAttempts = e.maxAttempts;
+        retrying.nextWaiting = e.nextWaiting;
         retrying.message = e.stepMessage;
+        retrying.maxAttempts = e.maxAttempts;
         retrying.firstInterval = e.firstInterval;
         retrying.intervalSeconds = e.intervalSeconds;
         retrying.backoffRate = e.backoffRate;
@@ -148,12 +150,16 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         // retrying-exception > step-state > annotation
         RetryState retrying = new RetryState();
         Retry annotation = method.getAnnotation(Retry.class);
+        if (annotation != null) {
+            retrying.merge(getRetryStateFromAnnotation(annotation));
+        }
+
+        if (step.retrying != null) {
+            retrying.merge(step.retrying);
+        }
+
         if (e instanceof RetryingException) {
-            retrying = getRetryStateFromException((RetryingException) e);
-        } else if (step.retrying != null) {
-            retrying = step.retrying;
-        } else if (annotation != null) {
-            retrying = getRetryStateFromAnnotation(annotation);
+            retrying.merge(getRetryStateFromException((RetryingException) e));
         }
 
         return retrying;
@@ -206,12 +212,14 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         }
 
         // Exceeds max attempts
-        if (step.executionTimes >= retrying.maxAttempts) {
-            if (retrying.succeedAfterRetrying) {
+        int maxAttempts = Utils.defaultIfNull(retrying.maxAttempts, 1);
+        boolean succeedAfterRetrying = Utils.defaultIfNull(retrying.succeedAfterRetrying, false);
+        if (step.executionTimes >= maxAttempts) {
+            if (succeedAfterRetrying) {
                 saveStep(accessor, step, StepStatus.DONE);
                 return;
             } else {
-                String message = "Exceeds max attempts, maxAttempts=" + retrying.maxAttempts;
+                String message = "Exceeds max attempts, maxAttempts=" + maxAttempts;
                 saveStep(accessor, step, StepStatus.FAILED);
                 throw stepException != null ?
                         new StepFailedException(message, stepException) :
@@ -219,13 +227,14 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
             }
         }
 
+        int timeoutSeconds = Utils.defaultIfNull(retrying.timeoutSeconds, 300);
         Duration totalExecutionTime = Duration.between(step.startTime, Instant.now());
-        if (totalExecutionTime.getSeconds() > retrying.timeoutSeconds) {
-            if (retrying.succeedAfterRetrying) {
+        if (totalExecutionTime.getSeconds() > timeoutSeconds) {
+            if (succeedAfterRetrying) {
                 saveStep(accessor, step, StepStatus.DONE);
                 return;
             } else {
-                String message = "Step timeout, timeoutSeconds=" + retrying.timeoutSeconds;
+                String message = "Step timeout, timeoutSeconds=" + timeoutSeconds;
                 saveStep(accessor, step, StepStatus.FAILED);
                 throw stepException != null ?
                         new TimeOutException(message, stepException) :
@@ -233,15 +242,26 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
             }
         }
 
-        int waitingTimeSeconds = calculateRetryingInterval(step.executionTimes,
-                retrying.firstInterval, retrying.intervalSeconds, retrying.backoffRate);
-
         SchedulingException scheduling = new SchedulingException();
-        scheduling.waitingTime = 1000L * waitingTimeSeconds;
+
+        if (retrying.nextWaiting != null) {
+            scheduling.waitingTime = retrying.nextWaiting;
+        } else {
+            int firstInterval = Utils.defaultIfNull(retrying.firstInterval, 0);
+            int intervalSeconds = Utils.defaultIfNull(retrying.intervalSeconds, 0);
+            double backoffRate = Utils.defaultIfNull(retrying.backoffRate, 1.0);
+            int waitingTimeSeconds = calculateRetryingInterval(
+                    step.executionTimes, firstInterval, intervalSeconds, backoffRate);
+            scheduling.waitingTime = 1000L * waitingTimeSeconds;
+        }
+
         scheduling.currentMethod = method;
         scheduling.stepState = step;
+        if (retrying.message != null) {
+            step.message = retrying.message;
+        }
 
-        step.nextRun = Instant.now().plusSeconds(waitingTimeSeconds);
+        step.nextRun = Instant.now().plusMillis(scheduling.waitingTime);
         saveStep(accessor, step, StepStatus.RETRYING);
         throw scheduling;
     }

@@ -2,7 +2,7 @@ package com.xychar.stateful.scheduler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.xychar.stateful.common.Utils;
-import com.xychar.stateful.engine.ServiceContainer;
+import com.xychar.stateful.engine.ServiceLocator;
 import com.xychar.stateful.engine.WorkflowEngine;
 import com.xychar.stateful.engine.WorkflowInstance;
 import com.xychar.stateful.engine.WorkflowMetadata;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class WorkflowDriver implements ApplicationContextAware, ServiceContainer {
+public class WorkflowDriver implements ApplicationContextAware, ServiceLocator {
     final Logger logger = LoggerFactory.getLogger(WorkflowDriver.class);
 
     public static final String settingsFile = "settings.json";
@@ -59,7 +59,7 @@ public class WorkflowDriver implements ApplicationContextAware, ServiceContainer
     }
 
     @Override
-    public <T> T lookupService(Class<T> serviceClazz, String name) {
+    public <T> T lookup(Class<T> serviceClazz, String name) {
         if (name != null && !name.isEmpty()) {
             return applicationContext.getBean(name, serviceClazz);
         } else {

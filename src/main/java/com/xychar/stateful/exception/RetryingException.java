@@ -2,6 +2,7 @@ package com.xychar.stateful.exception;
 
 public class RetryingException extends RuntimeException {
     public String stepMessage;
+    public long nextWaiting = 0;
 
     public int maxAttempts;
     public int firstInterval;

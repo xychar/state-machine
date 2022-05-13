@@ -2,6 +2,7 @@ package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Retry;
 import com.xychar.stateful.engine.Startup;
+import com.xychar.stateful.engine.StepChecker;
 import com.xychar.stateful.engine.StepKey;
 import com.xychar.stateful.engine.StepStatus;
 import com.xychar.stateful.engine.Steps;
@@ -57,8 +58,8 @@ public interface BenchmarkEc2 {
         pingSsm(ec2Id);
         installHdb(ec2Id);
 
-        Steps.check1(BenchmarkEc2::launchEc2);
-        Steps.check1(BenchmarkEc2::pingSsm);
+        StepChecker.check1(BenchmarkEc2::launchEc2);
+        StepChecker.check1(BenchmarkEc2::pingSsm, "ec2-id");
 
         return ec2Id;
     }
