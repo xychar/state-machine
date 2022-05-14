@@ -8,6 +8,7 @@ import com.xychar.stateful.engine.StepState;
 import com.xychar.stateful.engine.StepStateAccessor;
 import com.xychar.stateful.engine.StepStatus;
 import com.xychar.stateful.exception.StepStateException;
+import com.xychar.stateful.mybatis.StepStateRow;
 import org.apache.commons.lang3.StringUtils;
 import org.mybatis.dynamic.sql.SqlBuilder;
 import org.mybatis.dynamic.sql.insert.GeneralInsertDSL;

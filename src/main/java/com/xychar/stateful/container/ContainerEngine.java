@@ -41,8 +41,10 @@ public class ContainerEngine {
      */
     private ElementMatcher.Junction<MethodDescription> methodFilter(Class<?> clazz) {
         return ElementMatchers.isDeclaredBy(
-                ElementMatchers.isSuperTypeOf(clazz)
-                        .and(ElementMatchers.isInterface()));
+                        ElementMatchers.isSuperTypeOf(clazz)
+                                .and(ElementMatchers.isInterface()))
+                .and(ElementMatchers.isAnnotatedWith(Component.class))
+                .and(ElementMatchers.takesNoArguments());
     }
 
     public Map<String, Integer> getMethodNames(Class<?> clazz) {

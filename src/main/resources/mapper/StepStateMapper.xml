@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xychar.stateful.mybatis.StepStateMapper">
+    <resultMap id="stepStateMap" type="com.xychar.stateful.mybatis.StepStateRow">
+        <id property="executionId" column="execution_id"/>
+        <id property="stepName" column="step_name"/>
+        <id property="stepKey" column="step_key"/>
+        <result property="status" column="status"/>
+        <result property="message" column="message"/>
+        <result property="executions" column="executions"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="returnValue" column="return_value"/>
+        <result property="parameters" column="parameters"/>
+        <result property="errorType" column="error_type"/>
+        <result property="exception" column="exception"/>
+        <result property="lastResult" column="last_result"/>
+        <result property="userVarInt" column="user_var_int"/>
+        <result property="userVarStr" column="user_var_str"/>
+        <result property="userVarObj" column="user_var_obj"/>
+    </resultMap>
+
+    <select id="load" resultMap="stepStateMap">
+        SELECT execution_id,
+               step_name,
+               step_key,
+               status,
+               message,
+               executions,
+               start_time,
+               end_time,
+               return_value,
+               parameters,
+               error_type,
+               "exception",
+               last_result,
+               user_var_int,
+               user_var_str,
+               user_var_obj
+        FROM t_step_state
+        WHERE execution_id = #{executionId}
+          AND step_name = #{stepName}
+          AND step_key = #{stepKey}
+    </select>
+
+    <insert id="insert" parameterType="com.xychar.stateful.mybatis.StepStateRow">
+        insert into t_step_state(execution_id,
+                                 step_name,
+                                 step_key,
+                                 status,
+                                 message,
+                                 executions,
+                                 start_time,
+                                 end_time,
+                                 return_value,
+                                 parameters,
+                                 error_type,
+                                 "exception",
+                                 last_result,
+                                 user_var_int,
+                                 user_var_str,
+                                 user_var_obj)
+        values (#{executionId},
+                #{stepName},
+                #{stepKey},
+                #{status},
+                #{message},
+                #{executions},
+                #{startTime},
+                #{endTime},
+                #{returnValue},
+                #{parameters},
+                #{errorType},
+                #{exception},
+                #{lastResult},
+                #{userVarInt},
+                #{userVarStr},
+                #{userVarObj})
+    </insert>
+
+    <update id="update" parameterType="com.xychar.stateful.mybatis.StepStateRow">
+        update t_step_state
+        set status       = #{status},
+            message      = #{message},
+            executions   = #{executions},
+            start_time   = #{startTime},
+            end_time     = #{endTime},
+            return_value = #{returnValue},
+            parameters   = #{parameters},
+            error_type   = #{errorType},
+            "exception"  = #{exception},
+            last_result  = #{lastResult},
+            user_var_int = #{userVarInt},
+            user_var_str = #{userVarStr},
+            user_var_obj = #{userVarObj},
+            where execution_id = #{executionId}
+                and step_name = #{stepName}
+                and step_key = #{stepKey}
+    </update>
+</mapper>

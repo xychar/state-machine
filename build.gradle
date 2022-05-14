@@ -37,9 +37,13 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.2'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'com.jayway.jsonpath:json-path:2.7.0'
-
     implementation 'info.picocli:picocli:4.6.3'
+
+    implementation 'org.mybatis:mybatis:3.5.9'
+    implementation 'org.mybatis:mybatis-spring:2.0.7'
     implementation 'org.xerial:sqlite-jdbc:3.36.0.3'
+    implementation 'com.zaxxer:HikariCP:4.0.3'
+
     implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
     implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.2'
