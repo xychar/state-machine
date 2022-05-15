@@ -1,6 +1,7 @@
 package com.xychar.stateful.spring;
 
 import com.xychar.stateful.mybatis.StepStateMapper;
+import com.xychar.stateful.mybatis.WorkflowMapper;
 import com.xychar.stateful.scheduler.WorkflowDriver;
 import com.xychar.stateful.store.StepStateStore;
 import com.xychar.stateful.store.WorkflowStore;
@@ -13,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.core.env.Environment;
@@ -24,16 +25,24 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 
+@Configuration
 @EnableTransactionManagement
-@ComponentScan(basePackageClasses = {
-        AppConfig.class,
-        StepStateStore.class,
-        WorkflowStore.class,
-        WorkflowDriver.class})
 @PropertySource("classpath:database.properties")
 public class AppConfig {
-    @Autowired
-    private Environment env;
+    private final Environment env;
+
+    public AppConfig(@Autowired Environment environment) {
+        this.env = environment;
+    }
+
+    public static AbstractApplicationContext initialize() {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+        context.register(Exceptions.class, AppConfig.class);
+
+        context.refresh();
+        context.start();
+        return context;
+    }
 
     @Bean
     public DataSource dataSource() {
@@ -62,24 +71,37 @@ public class AppConfig {
     @Bean
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource, ApplicationContext context) throws Exception {
         SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
-        factoryBean.setMapperLocations(context.getResources("classpath:/mapper/*.xml"));
+        factoryBean.setMapperLocations(context.getResources("classpath:/mapper/*.sqlxml"));
         factoryBean.setDataSource(dataSource);
         return factoryBean.getObject();
     }
 
     @Bean
-    public MapperFactoryBean<StepStateMapper> userMapper(SqlSessionFactory sqlSessionFactory) throws Exception {
+    public MapperFactoryBean<StepStateMapper> stepStateMapper(SqlSessionFactory sqlSessionFactory) throws Exception {
         MapperFactoryBean<StepStateMapper> factoryBean = new MapperFactoryBean<>(StepStateMapper.class);
         factoryBean.setSqlSessionFactory(sqlSessionFactory);
         return factoryBean;
     }
 
-    public static AbstractApplicationContext initialize() {
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-        context.register(Exceptions.class, AppConfig.class);
+    @Bean
+    public MapperFactoryBean<WorkflowMapper> workflowMapper(SqlSessionFactory sqlSessionFactory) throws Exception {
+        MapperFactoryBean<WorkflowMapper> factoryBean = new MapperFactoryBean<>(WorkflowMapper.class);
+        factoryBean.setSqlSessionFactory(sqlSessionFactory);
+        return factoryBean;
+    }
 
-        context.refresh();
-        context.start();
-        return context;
+    @Bean
+    public StepStateStore stepStateStore(StepStateMapper mapper) {
+        return new StepStateStore(mapper);
+    }
+
+    @Bean
+    public WorkflowStore workflowStore(WorkflowMapper mapper) {
+        return new WorkflowStore(mapper);
+    }
+
+    @Bean
+    public WorkflowDriver workflowDriver(StepStateStore stepStateStore, WorkflowStore workflowStore) {
+        return new WorkflowDriver(stepStateStore, workflowStore);
     }
 }

@@ -1,5 +1,6 @@
 package com.xychar.stateful.store;
 
+import com.xychar.stateful.mybatis.WorkflowRow;
 import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 import org.springframework.jdbc.core.ResultSetExtractor;

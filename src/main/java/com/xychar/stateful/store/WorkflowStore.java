@@ -3,20 +3,11 @@ package com.xychar.stateful.store;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xychar.stateful.common.Utils;
 import com.xychar.stateful.engine.WorkflowStatus;
+import com.xychar.stateful.mybatis.WorkflowMapper;
+import com.xychar.stateful.mybatis.WorkflowRow;
 import com.xychar.stateful.scheduler.WorkflowData;
 import org.apache.commons.lang3.StringUtils;
-import org.mybatis.dynamic.sql.SqlBuilder;
-import org.mybatis.dynamic.sql.insert.GeneralInsertDSL;
-import org.mybatis.dynamic.sql.insert.GeneralInsertModel;
-import org.mybatis.dynamic.sql.select.SelectDSL;
-import org.mybatis.dynamic.sql.select.SelectModel;
-import org.mybatis.dynamic.sql.update.UpdateDSL;
-import org.mybatis.dynamic.sql.update.UpdateModel;
-import org.mybatis.dynamic.sql.util.Buildable;
-import org.mybatis.dynamic.sql.util.spring.NamedParameterJdbcTemplateExtensions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -25,23 +16,20 @@ import java.util.UUID;
 
 @Component
 public class WorkflowStore {
-    private final JdbcTemplate jdbcTemplate;
-    private final NamedParameterJdbcTemplate template;
+    private final WorkflowMapper workflowMapper;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
     private final ObjectMapper errorMapper = new ObjectMapper()
             .addMixIn(Throwable.class, ThrowableMixIn.class);
 
-    public WorkflowStore(@Autowired JdbcTemplate jdbcTemplate,
-                         @Autowired NamedParameterJdbcTemplate template) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.template = template;
+    public WorkflowStore(@Autowired WorkflowMapper workflowMapper) {
+        this.workflowMapper = workflowMapper;
     }
 
     public void createTableIfNotExists() {
-        jdbcTemplate.execute(WorkflowTable.CREATE_TABLE);
-        jdbcTemplate.execute(WorkflowTable.CREATE_INDEX);
+        workflowMapper.createTableIfNotExists();
+        workflowMapper.createIndexIfNotExists();
     }
 
     public WorkflowData createFrom(Method stepMethod) {
@@ -55,61 +43,8 @@ public class WorkflowStore {
         return item;
     }
 
-    public WorkflowRow loadWorkflow(String sessionId, String executionId, String workerName) {
-        NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
-
-        Buildable<SelectModel> selectStatement = SelectDSL.select(WorkflowTable.TABLE.allColumns())
-                .from(WorkflowTable.TABLE)
-                .where(WorkflowTable.sessionId, SqlBuilder.isEqualTo(sessionId))
-                .and(WorkflowTable.executionId, SqlBuilder.isEqualToWhenPresent(executionId))
-                .and(WorkflowTable.workerName, SqlBuilder.isEqualToWhenPresent(workerName));
-
-        return extensions.selectOne(selectStatement, WorkflowTable::mappingAllColumns).orElse(null);
-    }
-
-    public void saveWorkflow(WorkflowRow row) {
-        NamedParameterJdbcTemplateExtensions extensions = new NamedParameterJdbcTemplateExtensions(template);
-
-        UpdateDSL<UpdateModel>.UpdateWhereBuilder updateStatement = UpdateDSL.update(WorkflowTable.TABLE)
-                .set(WorkflowTable.workerName).equalToWhenPresent(row.workerName)
-                .set(WorkflowTable.sessionId).equalToWhenPresent(row.sessionId)
-                .set(WorkflowTable.status).equalToWhenPresent(row.status)
-                .set(WorkflowTable.startTime).equalToWhenPresent(row.startTime)
-                .set(WorkflowTable.endTime).equalToWhenPresent(row.endTime)
-                .set(WorkflowTable.nextRun).equalToWhenPresent(row.nextRun)
-                .set(WorkflowTable.lastRun).equalToWhenPresent(row.lastRun)
-                .set(WorkflowTable.executions).equalToWhenPresent(row.executions)
-                .set(WorkflowTable.returnValue).equalToWhenPresent(row.returnValue)
-                .set(WorkflowTable.errorType).equalToWhenPresent(row.errorType)
-                .set(WorkflowTable.exception).equalToWhenPresent(row.exception)
-                .set(WorkflowTable.configData).equalToWhenPresent(row.configData)
-                .where(WorkflowTable.executionId, SqlBuilder.isEqualTo(row.executionId));
-
-        int affectedRows = extensions.update(updateStatement);
-        if (affectedRows == 0) {
-            Buildable<GeneralInsertModel> insertStatement = GeneralInsertDSL.insertInto(WorkflowTable.TABLE)
-                    .set(WorkflowTable.executionId).toValue(row.executionId)
-                    .set(WorkflowTable.workerName).toValue(row.workerName)
-                    .set(WorkflowTable.sessionId).toValue(row.sessionId)
-                    .set(WorkflowTable.className).toValue(row.className)
-                    .set(WorkflowTable.methodName).toValue(row.methodName)
-                    .set(WorkflowTable.status).toValue(row.status)
-                    .set(WorkflowTable.startTime).toValueWhenPresent(row.startTime)
-                    .set(WorkflowTable.endTime).toValueWhenPresent(row.endTime)
-                    .set(WorkflowTable.nextRun).toValueWhenPresent(row.nextRun)
-                    .set(WorkflowTable.lastRun).toValueWhenPresent(row.lastRun)
-                    .set(WorkflowTable.executions).toValueWhenPresent(row.executions)
-                    .set(WorkflowTable.returnValue).toValueWhenPresent(row.returnValue)
-                    .set(WorkflowTable.errorType).toValueWhenPresent(row.errorType)
-                    .set(WorkflowTable.exception).toValueWhenPresent(row.exception)
-                    .set(WorkflowTable.configData).toValueWhenPresent(row.configData);
-
-            extensions.generalInsert(insertStatement);
-        }
-    }
-
-    public WorkflowData load(String sessionId, String workerName) throws Exception {
-        WorkflowRow row = loadWorkflow(sessionId, null, workerName);
+    public WorkflowData loadSimple(String sessionId, String workerName) throws Exception {
+        WorkflowRow row = workflowMapper.load(sessionId, null, workerName);
         if (row != null) {
             WorkflowData workflow = new WorkflowData();
             workflow.executionId = row.executionId;
@@ -132,8 +67,8 @@ public class WorkflowStore {
         return null;
     }
 
-    public WorkflowData loadMore(String sessionId, String workerName, Method stepMethod) throws Exception {
-        WorkflowRow row = loadWorkflow(sessionId, null, workerName);
+    public WorkflowData loadFull(String sessionId, String workerName, Method stepMethod) throws Exception {
+        WorkflowRow row = workflowMapper.load(sessionId, null, workerName);
         if (row != null) {
             WorkflowData workflow = new WorkflowData();
             workflow.executionId = row.executionId;
@@ -193,7 +128,9 @@ public class WorkflowStore {
             row.lastRun = Utils.callIfNotNull(workflow.lastRun, Instant::toEpochMilli);
             row.nextRun = Utils.callIfNotNull(workflow.nextRun, Instant::toEpochMilli);
 
-            saveWorkflow(row);
+            if (workflowMapper.update(row) < 1) {
+                workflowMapper.insert(row);
+            }
         }
     }
 }

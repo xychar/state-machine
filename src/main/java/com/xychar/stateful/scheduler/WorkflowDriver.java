@@ -94,7 +94,7 @@ public class WorkflowDriver implements ApplicationContextAware, ServiceLocator {
             WorkflowWorker thread = new WorkflowWorker(instance, stepMethod);
             thread.workerName = instance.workerName;
 
-            thread.workflowItem = workflowStore.load(sessionId, thread.workerName);
+            thread.workflowItem = workflowStore.loadSimple(sessionId, thread.workerName);
             if (thread.workflowItem == null) {
                 thread.workflowItem = workflowStore.createFrom(stepMethod);
                 thread.workflowItem.workerName = thread.workerName;

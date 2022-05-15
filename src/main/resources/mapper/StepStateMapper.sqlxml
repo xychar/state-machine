@@ -22,6 +22,28 @@
         <result property="userVarObj" column="user_var_obj"/>
     </resultMap>
 
+    <update id="createTableIfNotExists"><![CDATA[
+        CREATE TABLE IF NOT EXISTS t_step_state(
+            execution_id varchar(50) NOT NULL,
+            step_name varchar(200) NOT NULL,
+            step_key varchar(200) NOT NULL,
+            status varchar(20) NOT NULL,
+            message varchar(2000) NULL,
+            executions integer NULL,
+            start_time varchar(50) NULL,
+            end_time varchar(50) NULL,
+            return_value text NULL,
+            parameters text NULL,
+            error_type varchar(200) NULL,
+            "exception" text NULL,
+            last_result text NULL,
+            user_var_int integer NULL,
+            user_var_str varchar(200) NULL,
+            user_var_obj text NULL,
+            PRIMARY KEY(execution_id, step_name, step_key)
+        )
+    ]]></update>
+
     <select id="load" resultMap="stepStateMap">
         SELECT execution_id,
                step_name,
@@ -82,21 +104,49 @@
 
     <update id="update" parameterType="com.xychar.stateful.mybatis.StepStateRow">
         update t_step_state
-        set status       = #{status},
-            message      = #{message},
-            executions   = #{executions},
-            start_time   = #{startTime},
-            end_time     = #{endTime},
-            return_value = #{returnValue},
-            parameters   = #{parameters},
-            error_type   = #{errorType},
-            "exception"  = #{exception},
-            last_result  = #{lastResult},
-            user_var_int = #{userVarInt},
-            user_var_str = #{userVarStr},
-            user_var_obj = #{userVarObj},
-            where execution_id = #{executionId}
-                and step_name = #{stepName}
-                and step_key = #{stepKey}
+        <set>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="message != null">
+                message = #{message},
+            </if>
+            <if test="executions != null">
+                executions = #{executions},
+            </if>
+            <if test="startTime != null">
+                start_time = #{startTime},
+            </if>
+            <if test="endTime != null">
+                end_time = #{endTime},
+            </if>
+            <if test="returnValue != null">
+                return_value = #{returnValue},
+            </if>
+            <if test="parameters != null">
+                parameters = #{parameters},
+            </if>
+            <if test="errorType != null">
+                error_type = #{errorType},
+            </if>
+            <if test="exception != null">
+                "exception" = #{exception},
+            </if>
+            <if test="lastResult != null">
+                last_result = #{lastResult},
+            </if>
+            <if test="userVarInt != null">
+                user_var_int = #{userVarInt},
+            </if>
+            <if test="userVarStr != null">
+                user_var_str = #{userVarStr},
+            </if>
+            <if test="userVarObj != null">
+                user_var_obj = #{userVarObj},
+            </if>
+        </set>
+        where execution_id = #{executionId}
+        and step_name = #{stepName}
+        and step_key = #{stepKey}
     </update>
 </mapper>

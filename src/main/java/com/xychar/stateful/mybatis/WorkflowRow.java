@@ -1,4 +1,4 @@
-package com.xychar.stateful.store;
+package com.xychar.stateful.mybatis;
 
 public class WorkflowRow {
     public String executionId;

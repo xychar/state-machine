@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xychar.stateful.mybatis.WorkflowMapper">
+    <resultMap id="workflowMap" type="com.xychar.stateful.mybatis.WorkflowRow">
+        <id property="executionId" column="execution_id"/>
+        <id property="workerName" column="worker_name"/>
+        <id property="sessionId" column="session_id"/>
+        <result property="className" column="class_name"/>
+        <result property="methodName" column="method_name"/>
+        <result property="status" column="status"/>
+        <result property="executions" column="executions"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="nextRun" column="next_run"/>
+        <result property="lastRun" column="last_run"/>
+        <result property="returnValue" column="return_value"/>
+        <result property="errorType" column="error_type"/>
+        <result property="exception" column="exception"/>
+        <result property="configData" column="config_data"/>
+    </resultMap>
+
+    <update id="createTableIfNotExists"><![CDATA[
+        CREATE TABLE IF NOT EXISTS t_workflow(
+            execution_id varchar(50) NOT NULL,
+            worker_name varchar(50) NOT NULL,
+            session_id varchar(50) NOT NULL,
+            class_name varchar(200) NULL,
+            method_name varchar(200) NULL,
+            step_key varchar(200) NULL,
+            status varchar(20) NOT NULL,
+            executions integer NULL,
+            start_time varchar(50) NULL,
+            end_time varchar(50) NULL,
+            next_run integer NULL,
+            last_run integer NULL,
+            return_value text NULL,
+            exception text NULL,
+            error_type varchar(200) NULL,
+            config_data text NULL,
+            PRIMARY KEY(execution_id)
+        )
+    ]]></update>
+
+    <update id="createIndexIfNotExists"><![CDATA[
+        CREATE UNIQUE INDEX IF NOT EXISTS
+            idx_workflow_name on t_workflow
+            (session_id, worker_name)
+    ]]></update>
+
+    <select id="load" resultMap="workflowMap">
+        SELECT execution_id,
+               worker_name,
+               session_id,
+               class_name,
+               method_name,
+               status,
+               executions,
+               start_time,
+               end_time,
+               next_run,
+               last_run,
+               return_value,
+               error_type,
+               exception,
+               config_data
+        FROM t_workflow
+        WHERE session_id = #{sessionId}
+        <if test="executionId != null">
+            AND execution_id = #{executionId}
+        </if>
+        <if test="workerName != null">
+            AND worker_name = #{workerName}
+        </if>
+    </select>
+
+    <insert id="insert" parameterType="com.xychar.stateful.mybatis.WorkflowRow">
+        INSERT INTO t_workflow(execution_id,
+                               worker_name,
+                               session_id,
+                               class_name,
+                               method_name,
+                               status,
+                               executions,
+                               start_time,
+                               end_time,
+                               next_run,
+                               last_run,
+                               return_value,
+                               error_type,
+                               exception,
+                               config_data)
+        VALUES (#{executionId},
+                #{workerName},
+                #{sessionId},
+                #{className},
+                #{methodName},
+                #{status},
+                #{executions},
+                #{startTime},
+                #{endTime},
+                #{nextRun},
+                #{lastRun},
+                #{returnValue},
+                #{errorType},
+                #{exception},
+                #{configData})
+    </insert>
+
+    <update id="update" parameterType="com.xychar.stateful.mybatis.WorkflowRow">
+        UPDATE t_workflow
+        <set>
+            <if test="className != null">
+                class_name = #{className},
+            </if>
+            <if test="methodName != null">
+                method_name = #{methodName},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="executions != null">
+                executions = #{executions},
+            </if>
+            <if test="startTime != null">
+                start_time = #{startTime},
+            </if>
+            <if test="endTime != null">
+                end_time = #{endTime},
+            </if>
+            <if test="nextRun != null">
+                next_run = #{nextRun},
+            </if>
+            <if test="lastRun != null">
+                last_run = #{lastRun},
+            </if>
+            <if test="returnValue != null">
+                return_value = #{returnValue},
+            </if>
+            <if test="errorType != null">
+                error_type = #{errorType},
+            </if>
+            <if test="exception != null">
+                exception = #{exception},
+            </if>
+            <if test="configData != null">
+                config_data = #{configData},
+            </if>
+        </set>
+        WHERE session_id = #{sessionId}
+          <if test="executionId != null">
+            AND execution_id = #{executionId}
+          </if>
+          <if test="workerName != null">
+            AND worker_name = #{workerName}
+          </if>
+    </update>
+</mapper>

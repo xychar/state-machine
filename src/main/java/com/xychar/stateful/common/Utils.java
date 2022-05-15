@@ -5,9 +5,29 @@ import com.xychar.stateful.exception.StepNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Method;
+import java.util.Properties;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
+    static final Pattern VAR_TAG = Pattern.compile("(\\\\$)|(\\$\\{\\s*(\\w\\S+).*?\\})");
+
+    public static String format(String template, Properties params) {
+        StringBuffer sb = new StringBuffer();
+        Matcher m = VAR_TAG.matcher(template);
+        while (m.find()) {
+            if (m.group(1) != null) {
+                m.appendReplacement(sb, "$");
+            } else if (m.group(3) != null) {
+                String value = params.getProperty(m.group(3), "");
+                m.appendReplacement(sb, value);
+            }
+        }
+
+        m.appendTail(sb);
+        return sb.toString();
+    }
 
     public static <T, R> R callIfNotNull(T obj, Function<T, R> func) {
         return obj != null ? func.apply(obj) : null;
@@ -39,8 +59,8 @@ public class Utils {
                     return m;
                 }
             }
-        }
 
-        throw new StepNotFoundException("Default step not found");
+            throw new StepNotFoundException("Default step not found");
+        }
     }
 }

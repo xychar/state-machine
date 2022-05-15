@@ -30,7 +30,7 @@ public class StepWorker extends StepInput {
         instance.inputObject = workflowConfig;
         instance.workerName = workerName;
 
-        workflowItem = workflowStore.load(sessionId, workerName);
+        workflowItem = workflowStore.loadSimple(sessionId, workerName);
         if (workflowItem == null) {
             workflowItem = workflowStore.createFrom(stepMethod);
             workflowItem.workerName = workerName;
