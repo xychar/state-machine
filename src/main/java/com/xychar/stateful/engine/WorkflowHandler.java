@@ -272,7 +272,7 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         StepState savedStep = StepStateHolder.getStepState();
 
         String stepKey = encodeStepKey(StepKeyHelper.getStepKeys(stepKeyArgs, args));
-        StepState step = accessor.load(instance.executionId, method, stepKey);
+        StepState step = accessor.loadSimple(instance.executionId, method, stepKey);
         if (step == null) {
             step = new StepState();
             step.startTime = Instant.now();

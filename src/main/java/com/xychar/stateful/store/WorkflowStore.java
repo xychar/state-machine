@@ -7,14 +7,11 @@ import com.xychar.stateful.mybatis.WorkflowMapper;
 import com.xychar.stateful.mybatis.WorkflowRow;
 import com.xychar.stateful.scheduler.WorkflowData;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.UUID;
 
-@Component
 public class WorkflowStore {
     private final WorkflowMapper workflowMapper;
 
@@ -23,7 +20,7 @@ public class WorkflowStore {
     private final ObjectMapper errorMapper = new ObjectMapper()
             .addMixIn(Throwable.class, ThrowableMixIn.class);
 
-    public WorkflowStore(@Autowired WorkflowMapper workflowMapper) {
+    public WorkflowStore(WorkflowMapper workflowMapper) {
         this.workflowMapper = workflowMapper;
     }
 

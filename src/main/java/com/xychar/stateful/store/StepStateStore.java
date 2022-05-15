@@ -11,7 +11,6 @@ import com.xychar.stateful.exception.StepStateException;
 import com.xychar.stateful.mybatis.StepStateMapper;
 import com.xychar.stateful.mybatis.StepStateRow;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -24,7 +23,7 @@ public class StepStateStore implements StepStateAccessor {
     private final ObjectMapper errorMapper = new ObjectMapper()
             .addMixIn(Throwable.class, ThrowableMixIn.class);
 
-    public StepStateStore(@Autowired StepStateMapper stepStateMapper) {
+    public StepStateStore(StepStateMapper stepStateMapper) {
         this.stepStateMapper = stepStateMapper;
     }
 
@@ -41,7 +40,7 @@ public class StepStateStore implements StepStateAccessor {
      * Load fewer data for step scheduling.
      */
     @Override
-    public StepState load(String sessionId, Method stepMethod, String stepKey) throws Throwable {
+    public StepState loadSimple(String sessionId, Method stepMethod, String stepKey) throws Throwable {
         String stepName = getStepName(stepMethod);
         StepStateRow row = stepStateMapper.load(sessionId, stepName, stepKey);
         if (row != null) {
@@ -75,7 +74,7 @@ public class StepStateStore implements StepStateAccessor {
     }
 
     @Override
-    public StepState loadMore(String sessionId, Method stepMethod, String stepKey) throws Throwable {
+    public StepState loadFull(String sessionId, Method stepMethod, String stepKey) throws Throwable {
         String stepName = getStepName(stepMethod);
         StepStateRow row = stepStateMapper.load(sessionId, stepName, stepKey);
         if (row != null) {
@@ -146,12 +145,6 @@ public class StepStateStore implements StepStateAccessor {
         }
 
         try {
-            row.lastResult = jsonMapper.writeValueAsString(step.lastResult);
-        } catch (JsonProcessingException e) {
-            throw new StepStateException("Failed to encode last result", e);
-        }
-
-        try {
             row.parameters = jsonMapper.writeValueAsString(step.parameters);
         } catch (JsonProcessingException e) {
             throw new StepStateException("Failed to encode step parameters", e);
@@ -171,6 +164,7 @@ public class StepStateStore implements StepStateAccessor {
         row.status = step.status.name();
         row.message = step.message;
         row.executions = step.executionTimes;
+        row.lastResult = step.lastResult;
         row.userVarInt = step.userVarInt;
         row.userVarStr = step.userVarStr;
         row.userVarObj = step.userVarObj;
@@ -178,7 +172,7 @@ public class StepStateStore implements StepStateAccessor {
         row.startTime = Utils.callIfNotNull(step.startTime, Instant::toString);
         row.endTime = Utils.callIfNotNull(step.endTime, Instant::toString);
 
-        if (stepStateMapper.update(row) < 1) {
+        if (stepStateMapper.update2(row) < 1) {
             stepStateMapper.insert(row);
         }
     }
