@@ -4,37 +4,41 @@ import com.xychar.stateful.engine.Startup;
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.StepKey;
 import com.xychar.stateful.engine.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.Random;
 
 @Workflow
 public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
+    Logger logger = LoggerFactory.getLogger(WorkflowChild1.class);
 
-    static final Random RAND = new SecureRandom();
+    Random RAND = new SecureRandom();
 
     @Step
     @Override
     default void hello(@StepKey String t1) {
-        System.out.println("*** Method [hello] executed in WorkflowChild1");
+        logger.info("Hello, call step in base workflow");
         WorkflowBase1.super.hello(t1);
     }
 
     @Step
     @Override
     default void welcome(@StepKey String t1) {
+        logger.info("Welcome, call step in base workflow");
         WorkflowBase1.super.welcome(t1);
         WorkflowBase2.super.welcome(t1);
     }
 
     @Step
     default void init() {
-        System.out.println("*** Method [init] executed in WorkflowChild1");
+        logger.info("Initialize");
     }
 
     @Step
     default String input() {
-        System.out.println("*** Method [input] executed in WorkflowChild1");
+        logger.info("Get user input - random");
         String[] buff = {"A", "B"};
 
         return buff[RAND.nextInt() & 1];
@@ -42,25 +46,22 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
 
     @Step
     default void optionA() {
-        System.out.println("*** Method [optionA] executed in WorkflowChild1");
+        logger.info("Option A is chosen");
     }
 
     @Step
     default void optionB() {
-        System.out.println("*** Method [optionB] executed in WorkflowChild1");
+        logger.info("Option B is chosen");
     }
 
     @Step
     default void hi(@StepKey String a, int b, String c, @StepKey int d) {
-        System.out.println("*** Method [hi] executed in WorkflowChild1");
-        // throw new IllegalStateException("Step execution failed");
+        logger.info("Hi, test step key: {}, {}", a, d);
     }
-
-    void sleep(long milliseconds);
 
     @Startup
     default Integer example1() {
-        System.out.println("*** Method [example1] executed in WorkflowChild1");
+        logger.info("We are now in example1");
         init();
 
         String data = input();
@@ -72,9 +73,9 @@ public interface WorkflowChild1 extends WorkflowBase1, WorkflowBase2 {
 
         hello("ab");
 
-        sleep(3000L);
-
         hi("p1", 'b', "c", 'd');
+        hi("p1", 'b', "c", 'f');
+        hi("p2", 'b', "c", 'd');
         return Integer.parseInt(data.toLowerCase(), 16);
     }
 }

@@ -18,7 +18,7 @@ public class StepChecker {
         throw new WorkflowException("Step state is only available in step execution");
     }
 
-    public static <T, R> StepStatus check1(Function<T, R> func) {
+    public static <T, R> StepStatus status(Function<T, R> func) {
         StepState step = currentStep();
         @SuppressWarnings("unchecked")
         T instance = (T) step.handler.query();
@@ -27,7 +27,7 @@ public class StepChecker {
         return getStepStatusOfLastQuery();
     }
 
-    public static <T, A> StepStatus check1(BiConsumer<T, A> consumer, A param1) {
+    public static <T, A> StepStatus status(BiConsumer<T, A> consumer, A param1) {
         StepState step = currentStep();
         @SuppressWarnings("unchecked")
         T instance = (T) step.handler.query();

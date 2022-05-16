@@ -6,27 +6,32 @@ import com.xychar.stateful.engine.Steps;
 import com.xychar.stateful.engine.SubStep;
 import com.xychar.stateful.engine.Workflow;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Workflow
 public interface StepRetrying2 {
+    Logger logger = LoggerFactory.getLogger(StepRetrying2.class);
+
     @SubStep
     @Retry(maxAttempts = 6, intervalSeconds = 5, succeedAfterRetrying = true)
     default String step1() {
-        System.out.println("*** Method [step1] executed in StepRetryingTest");
-        System.out.format("*** Step execution times: %d%n", Steps.getExecutionTimes());
-        Validate.isTrue(Steps.getExecutionTimes() >= 20, "Retrying ...");
+        logger.info("Executing step1");
+        logger.info("Current execution times of step1: {}", Steps.getExecutionTimes());
+
+        Validate.isTrue(Steps.getExecutionTimes() >= 3, "Retrying ...");
         return "i-001";
     }
 
     @Startup
     default String step2() {
-        System.out.println("*** Method [step1] executed in StepRetryingTest");
-        System.out.format("*** Step execution times: %d%n", Steps.getExecutionTimes());
+        logger.info("Executing step2");
+        logger.info("Current execution times of step2: {}", Steps.getExecutionTimes());
 
         String ret = step1();
-        System.out.format("*** Result of step1: %s%n", ret);
+        logger.info("Result of step1: {}", ret);
 
-        Steps.succeed("Done-done");
+        Steps.succeed("done-done");
         return ret;
     }
 }

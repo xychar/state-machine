@@ -6,7 +6,7 @@
                 <Route>
                     <RollingFile
                             name="engine-${ctx:worker_name}"
-                            fileName="logs/engine-${ctx:event_type}.log"
+                            fileName="logs/engine-${ctx:worker_name}.log"
                             filePattern="logs/engine-${ctx:worker_name}-%i.log">
                         <PatternLayout pattern="%d{ISO8601} [%t] %p %c{3} - %m%n"/>
                         <Policies>
@@ -53,15 +53,17 @@
     </Appenders>
     <Loggers>
         <Root level="DEBUG">
-            <AppenderRef ref="STDOUT" level="INFO"/>
-            <AppenderRef ref="application" level="DEBUG"/>
+            <AppenderRef ref="STDOUT" level="WARN"/>
+            <AppenderRef ref="application" level="INFO"/>
         </Root>
 
         <Logger name="com.xychar.stateful.engine" level="debug" additivity="false">
+            <AppenderRef ref="STDOUT" level="debug"/>
             <AppenderRef ref="engine"/>
         </Logger>
 
         <Logger name="com.xychar.stateful.example" level="debug" additivity="false">
+            <AppenderRef ref="STDOUT" level="debug"/>
             <AppenderRef ref="worker"/>
         </Logger>
     </Loggers>

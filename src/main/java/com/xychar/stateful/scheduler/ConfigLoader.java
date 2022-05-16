@@ -62,7 +62,7 @@ public class ConfigLoader {
         return mainNode;
     }
 
-    private static boolean isWorkerEnabled(JsonNode worker) {
+    private static boolean isWorkerEnabled(String name, JsonNode worker) {
         JsonNode disabled = worker.get("disabled");
         if (disabled != null) {
             return !disabled.asBoolean(false);
@@ -95,8 +95,8 @@ public class ConfigLoader {
             JsonNode workerConfig = defaultConfig.deepCopy();
             ((ObjectNode) workerConfig).put("$name", worker.getKey());
 
-            deepMerge(defaultConfig, worker.getValue());
-            if (isWorkerEnabled(workerConfig)) {
+            deepMerge(workerConfig, worker.getValue());
+            if (isWorkerEnabled(worker.getKey(), workerConfig)) {
                 workerConfigs.put(worker.getKey(), workerConfig);
             }
         }

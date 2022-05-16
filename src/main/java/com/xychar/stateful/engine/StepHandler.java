@@ -31,12 +31,4 @@ public interface StepHandler {
     Object interceptMethod(@This WorkflowInstance<?> instance, @MethodKind int kind,
                            @Origin Method method, @StepKeyArgs String stepKeyArgs,
                            @AllArguments Object... args) throws Throwable;
-
-    /**
-     * Reserved method name.
-     */
-    @BindingPriority(100)
-    void sleep(long milliseconds) throws Throwable;
-
-    String getExecutionId();
 }

@@ -2,18 +2,22 @@ package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Workflow
 public interface BenchmarkRds {
+    Logger logger = LoggerFactory.getLogger(BenchmarkRds.class);
+
     @Step
     default String createRds() {
-        System.out.println("*** Method [createRds] executed in BenchmarkRds");
+        logger.info("Creating RDS instance ...");
         return "rds-001";
     }
 
     @Step
     default DbEndpoint checkRds(String rdsId) {
-        System.out.println("*** Method [checkRds] executed in BenchmarkRds");
+        logger.info("Checking if RDS instance is available ...");
         DbEndpoint endpoint = new DbEndpoint();
         endpoint.host = "host-01";
         endpoint.port = 1024;
@@ -22,41 +26,41 @@ public interface BenchmarkRds {
 
     @Step
     default String dbHost(String rdsId) {
-        System.out.println("*** Method [dbHost] executed in BenchmarkRds");
+        logger.info("Get host name of RDS instance: {}", rdsId);
         return "host-name";
     }
 
     @Step
     default int dbPort(String rdsId) {
-        System.out.println("*** Method [dbPort] executed in BenchmarkRds");
+        logger.info("Get port number of RDS instance: {}", rdsId);
         return 1520;
     }
 
     @Step
     default void pingDb(String host, int port) {
-        System.out.println("*** Method [pingDb] executed in BenchmarkRds");
+        logger.info("Ping database: {}:{}", host, port);
     }
 
     @Step
     default void createDb(String host, int port) {
-        System.out.println("*** Method [createDb] executed in BenchmarkRds");
+        logger.info("Create user db: {}:{}", host, port);
     }
 
     @Step
     default void testDb(DbEndpoint ep) {
-        System.out.println("*** Method [testDb] executed in BenchmarkRds");
-        System.out.format("*** testDb, host=%s, port=%d%n", ep.host, ep.port);
+        logger.info("Test user db: {}:{}", ep.host, ep.port);
     }
 
     @Step
     default void hello() {
-        System.out.println("*** Private method [hello] executed in BenchmarkRds");
+        logger.info("Say hello");
     }
 
     @Step
     default String rds() {
+        logger.info("Build RDS instance");
+
         hello();
-        System.out.println("*** Method [rds] executed in BenchmarkRds");
 
         String rdsId = createRds();
         checkRds(rdsId);
@@ -68,6 +72,7 @@ public interface BenchmarkRds {
 
         DbEndpoint ep = checkRds(rdsId);
         testDb(ep);
+
         return rdsId;
     }
 }

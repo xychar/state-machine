@@ -20,6 +20,7 @@
             "iops": 32000
         },
         "2xlarge": {
+            "disabled": true,
             "engineName": "sqlserver-se",
             "engineVersion": "14.00.3035.2.v1",
             "instanceClass": "db.m5.2xlarge",

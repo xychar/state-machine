@@ -10,6 +10,8 @@ import com.xychar.stateful.exception.StepStateException;
 import com.xychar.stateful.exception.TimeOutException;
 import com.xychar.stateful.exception.UserDataException;
 import com.xychar.stateful.exception.WorkflowException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -17,6 +19,8 @@ import java.time.Instant;
 import java.util.concurrent.Callable;
 
 public class WorkflowHandler implements StepHandler, OutputHandler {
+    static final Logger logger = LoggerFactory.getLogger(WorkflowHandler.class);
+
     public final WorkflowInstance<?> instance;
     private final WorkflowMetadata<?> metadata;
     private final StepStateAccessor accessor;
@@ -268,7 +272,7 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
 
     public Object invoke(Object self, Callable<?> invocation, Method method,
                          String stepKeyArgs, Object[] args) throws Throwable {
-        System.out.println("*** invoking method: " + method.getName());
+        logger.debug("Invoking method: {}", method.getName());
         StepState savedStep = StepStateHolder.getStepState();
 
         String stepKey = encodeStepKey(StepKeyHelper.getStepKeys(stepKeyArgs, args));
@@ -290,7 +294,7 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
         }
 
         if (step.status != null) {
-            System.out.format("found method-call: %s%s%n", method.getName(), stepKey);
+            logger.debug("Found step state: {}{}", method.getName(), stepKey);
             if (StepStatus.DONE.equals(step.status)) {
                 return step.returnValue;
             } else if (StepStatus.FAILED.equals(step.status)) {
@@ -352,25 +356,14 @@ public class WorkflowHandler implements StepHandler, OutputHandler {
     public Object interceptMethod(WorkflowInstance<?> instance, int kind,
                                   Method method, String stepKeyArgs,
                                   Object... args) throws Throwable {
-        System.out.println("*** invoking non-default method: " + method.getName());
+        logger.warn("Invoking non-default method: {}", method.getName());
         return null;
-    }
-
-    @Override
-    public void sleep(long milliseconds) throws Throwable {
-        System.out.println("*** sleep: " + milliseconds);
-        Thread.sleep(milliseconds);
-    }
-
-    @Override
-    public String getExecutionId() {
-        return instance.executionId;
     }
 
     @Override
     public Object interceptProperty(OutputProxy parent, Method method,
                                     Object... args) throws Throwable {
-        System.out.println("*** handling output property: " + method.getName());
+        logger.debug("Handling output property: {}", method.getName());
         return null;
     }
 }

@@ -2,18 +2,21 @@ package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Workflow
 public interface WorkflowBase2 {
+    Logger logger = LoggerFactory.getLogger(WorkflowBase2.class);
+
     @Step
     default void hello(String t1) {
-        System.out.println("*** Method [hello] executed in WorkflowBase2");
-
+        logger.info("We are in hello: {}", t1);
         welcome(t1);
     }
 
     @Step
     default void welcome(String t1) {
-        System.out.println("*** Method [welcome] executed in WorkflowBase2");
+        logger.info("We are in welcome: {}", t1);
     }
 }

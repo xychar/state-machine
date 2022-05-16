@@ -2,17 +2,21 @@ package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Workflow
 public interface BenchmarkVpc {
+    Logger logger = LoggerFactory.getLogger(BenchmarkVpc.class);
+
     @Step
     default String tgw(String vpcId) {
-        System.out.println("*** Method [tgw] executed in BenchmarkVpc");
+        logger.info("Setup transit gateway for: {}", vpcId);
         return "tgw-01";
     }
 
     @Step
     default void network() {
-        System.out.println("*** Method [network] executed in BenchmarkVpc");
+        logger.info("Configure network");
     }
 }

@@ -23,10 +23,10 @@ public class RunExample1 {
         engine.stateAccessor = store;
 
         WorkflowMetadata<WorkflowChild1> metadata = engine.buildFrom(WorkflowChild1.class);
-        WorkflowInstance<WorkflowChild1> session = engine.newInstance(metadata);
+        WorkflowInstance<WorkflowChild1> instance = engine.newInstance(metadata);
 
-        session.setExecutionId(UUID.randomUUID().toString());
-        WorkflowChild1 workflow = session.getWorkflowInstance();
+        instance.setExecutionId(UUID.randomUUID().toString());
+        WorkflowChild1 workflow = instance.getWorkflowInstance();
 
         System.out.println("first-run: example1");
         Integer data1 = workflow.example1();
@@ -40,8 +40,8 @@ public class RunExample1 {
         String input1 = workflow.input();
         System.out.println("input1: " + input1);
 
-        String sessionId = Steps.getExecutionId(workflow);
-        System.out.println("SessionId: " + sessionId);
+        String executionId = instance.executionId;
+        System.out.println("executionId: " + executionId);
     }
 
     public static void main(String[] args) {

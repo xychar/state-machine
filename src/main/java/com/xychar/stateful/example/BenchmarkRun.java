@@ -2,42 +2,47 @@ package com.xychar.stateful.example;
 
 import com.xychar.stateful.engine.Step;
 import com.xychar.stateful.engine.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Workflow
 public interface BenchmarkRun extends BenchmarkVpc, BenchmarkEc2, BenchmarkRds {
+    Logger logger = LoggerFactory.getLogger(BenchmarkRun.class);
+
     @Step
     default void installSoftware(String ec2Id) {
-        System.out.println("*** Method [installSoftware] executed in BenchmarkRun");
+        logger.info("Install software");
     }
 
     @Step
     default void uploadConfigs(String ec2Id) {
-        System.out.println("*** Method [uploadConfigs] executed in BenchmarkRun");
+        logger.info("Upload configs to: {}", ec2Id);
     }
 
     @Step
     default void prepare(String ec2Id) {
-        System.out.println("*** Method [prepare] executed in BenchmarkRun");
+        logger.info("Prepare test: {}", ec2Id);
     }
 
     @Step
     default void start(String ec2Id) {
-        System.out.println("*** Method [start] executed in BenchmarkRun");
+        logger.info("Start test: {}", ec2Id);
     }
 
     @Step
     default void check(String ec2Id) {
-        System.out.println("*** Method [check] executed in BenchmarkRun");
+        logger.info("Check test: {}", ec2Id);
     }
 
     @Step
     default void finish(String ec2Id) {
-        System.out.println("*** Method [finish] executed in BenchmarkRun");
+        logger.info("Finish up test: {}", ec2Id);
     }
 
     @Step
     default void execute(String ec2Id) {
-        System.out.println("*** Method [execute] executed in BenchmarkRun");
+        logger.info("Execute test: {}", ec2Id);
+
         network();
         ec2();
         rds();
@@ -52,8 +57,6 @@ public interface BenchmarkRun extends BenchmarkVpc, BenchmarkEc2, BenchmarkRds {
 
     @Step
     default void main() {
-        System.out.println("*** Method [main] executed in BenchmarkRun");
-        String ec2Id = ec2();
-        execute(ec2Id);
+        logger.info("Main entry");
     }
 }
