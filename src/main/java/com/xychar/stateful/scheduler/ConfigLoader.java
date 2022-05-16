@@ -26,8 +26,20 @@ public class ConfigLoader {
         mergedConfigs = null;
     }
 
+    public void loadRootConfigFromResource(String name) throws IOException {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        rootConfig = mapper.readTree(loader.getResourceAsStream(name));
+        mergedConfigs = null;
+    }
+
     public void loadUserConfig(File userConfigFile) throws IOException {
         userConfig = mapper.readTree(userConfigFile);
+        mergedConfigs = null;
+    }
+
+    public void loadUserConfigFromResource(String name) throws IOException {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        userConfig = mapper.readTree(loader.getResourceAsStream(name));
         mergedConfigs = null;
     }
 

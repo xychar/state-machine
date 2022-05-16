@@ -17,7 +17,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -30,6 +29,7 @@ public class WorkflowDriver implements ApplicationContextAware, ServiceLocator {
 
     public static final String settingsFile = "settings.json";
     public static final String benchmarkFile = "benchmark.json";
+
     private final ConfigLoader configs = new ConfigLoader();
 
     public ApplicationContext applicationContext;
@@ -73,8 +73,8 @@ public class WorkflowDriver implements ApplicationContextAware, ServiceLocator {
         workflowEngine.stateAccessor = this.stepStateStore;
         workflowEngine.serviceContainer = this;
 
-        configs.loadRootConfig(new File(settingsFile));
-        configs.loadUserConfig(new File(benchmarkFile));
+        configs.loadRootConfigFromResource(settingsFile);
+        configs.loadUserConfigFromResource(benchmarkFile);
     }
 
     public void execute() throws Exception {

@@ -4,8 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -19,7 +17,6 @@ import java.nio.charset.Charset;
 public class DriverHandler implements RequestStreamHandler {
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
